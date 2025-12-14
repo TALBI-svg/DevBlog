@@ -21,11 +21,29 @@
             
             <div class="p-8 sm:p-12">
                 <header class="mb-8">
-                    <div class="flex items-center space-x-2 text-sm text-gray-500 mb-4">
-                        <span class="bg-primary-50 text-primary-700 px-3 py-1 rounded-full font-medium">Article</span>
-                        <span>&bull;</span>
-                        <time datetime="{{ $post->created_at }}">{{ $post->created_at->format('F d, Y') }}</time>
+                    <!-- Author Info -->
+                    <div class="flex items-center mb-6">
+                        <div class="flex-shrink-0">
+                            <div class="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold border border-primary-200 overflow-hidden">
+                                @if($post->user && $post->user->profile_photo_path)
+                                    <img src="{{ asset('storage/' . $post->user->profile_photo_path) }}" alt="{{ $post->user->name }}" class="h-full w-full object-cover">
+                                @else
+                                    {{ substr($post->user ? $post->user->name : 'U', 0, 1) }}
+                                @endif
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-base font-semibold text-gray-900">
+                                {{ $post->user ? $post->user->name : 'Unknown User' }}
+                            </p>
+                            <div class="flex items-center text-sm text-gray-500">
+                                <time datetime="{{ $post->created_at }}">{{ $post->created_at->format('F d, Y') }}</time>
+                                <span class="mx-2">&bull;</span>
+                                <span class="bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full text-xs font-medium">Article</span>
+                            </div>
+                        </div>
                     </div>
+
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight mb-6">
                         {{ $post->title }}
                     </h1>
@@ -45,6 +63,7 @@
                 </a>
                 
                 @auth
+                @if(auth()->id() === $post->user_id)
                 <div class="flex space-x-3">
                     <a href="{{ route('posts.edit', $post) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                         <svg class="-ml-1 mr-2 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,6 +82,7 @@
                         </button>
                     </form>
                 </div>
+                @endif
                 @endauth
             </div>
         </article>

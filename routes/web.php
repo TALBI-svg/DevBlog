@@ -33,7 +33,6 @@ Route::get('/user/profile', [UserController::class, 'index']);
 
 // Public Post Routes
 Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
-Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
 
 // Protected Post Routes
 Route::middleware('auth')->group(function () {
@@ -49,3 +48,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 });
+
+// Public Post Show Route (Must be after specific routes)
+Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');

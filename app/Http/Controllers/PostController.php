@@ -12,7 +12,7 @@ class PostController extends Controller
     public function index()
     {
         // Show 6 posts per page
-        $posts = Post::latest()->paginate(6);
+        $posts = Post::with('user')->latest()->paginate(6);
         return view('posts.index', compact('posts'));
     }
 
@@ -37,8 +37,18 @@ class PostController extends Controller
         }
 
         unset($validated['image']); // Remove image from validated array as it's not a column
+        
+        $validated['user_id'] = auth()->id();
 
-        Post::create($validated);
+        $post = Post::create($validated);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Post created successfully',
+                'html' => view('posts.partials.post-card', compact('post'))->render(),
+            ]);
+        }
 
         return redirect()->route('posts.index')
                          ->with('success', 'Post created successfully');
@@ -47,19 +57,35 @@ class PostController extends Controller
     // SHOW single post
     public function show(Post $post)
     {
-        $post->load('comments'); // Eager load comments
+        $post->load(['comments.user', 'user']); // Eager load comments and post owner
         return view('posts.show', compact('post'));
     }
 
     // Show edit form
     public function edit(Post $post)
     {
+        if ($post->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if (request()->wantsJson()) {
+            return response()->json([
+                'post' => $post,
+                'image_url' => $post->image_path ? asset('storage/' . $post->image_path) : null,
+                'update_url' => route('posts.update', $post)
+            ]);
+        }
+
         return view('posts.edit', compact('post'));
     }
 
     // UPDATE post
     public function update(Request $request, Post $post)
     {
+        if ($post->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -79,6 +105,14 @@ class PostController extends Controller
 
         $post->update($validated);
 
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Post updated successfully',
+                'html' => view('posts.partials.post-card', compact('post'))->render(),
+            ]);
+        }
+
         return redirect()->route('posts.index')
                          ->with('success', 'Post updated successfully');
     }
@@ -86,6 +120,10 @@ class PostController extends Controller
     // DELETE post
     public function destroy(Post $post)
     {
+        if ($post->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
         if ($post->image_path) {
             Storage::disk('public')->delete($post->image_path);
         }

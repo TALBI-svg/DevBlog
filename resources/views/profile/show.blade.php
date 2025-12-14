@@ -10,7 +10,7 @@
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="p-8">
-            <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
+            <form id="profile-update-form" action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" @submit.prevent="updateProfile">
                 @csrf
                 @method('PUT')
                 
@@ -25,7 +25,7 @@
                             <div class="col-span-full">
                                 <label for="photo" class="block text-sm font-medium leading-6 text-gray-900">Photo</label>
                                 <div class="mt-2 flex items-center gap-x-3">
-                                    <div class="h-20 w-20 flex-shrink-0 rounded-full bg-gray-100 border-2 border-white shadow-sm overflow-hidden relative">
+                                    <div id="photo-preview-container" class="h-20 w-20 flex-shrink-0 rounded-full bg-gray-100 border-2 border-white shadow-sm overflow-hidden relative">
                                         @if($user->profile_photo_path)
                                             <img src="{{ asset('storage/' . $user->profile_photo_path) }}" alt="{{ $user->name }}" class="h-full w-full object-cover">
                                         @else
@@ -36,7 +36,7 @@
                                     </div>
                                     <div class="ml-4">
                                         <div class="relative">
-                                            <input type="file" name="profile_photo" id="profile_photo" class="hidden" onchange="previewImage(this)">
+                                            <input type="file" name="profile_photo" id="profile_photo" class="hidden" accept="image/*" onchange="previewImage(this)">
                                             <label for="profile_photo" class="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 cursor-pointer transition-colors">
                                                 Change photo
                                             </label>
@@ -87,12 +87,80 @@
 </div>
 
 <script>
+    function updateProfile(e) {
+        const form = e.target;
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerText;
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Saving...';
+        
+        fetch("{{ route('profile.update') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: data.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                
+                // Update navbar avatar if exists
+                if (data.image_url) {
+                    const navAvatar = document.querySelector('nav .h-8.w-8 img, nav .h-10.w-10 img');
+                    if (navAvatar) {
+                        navAvatar.src = data.image_url;
+                    }
+                }
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message || 'Something went wrong.',
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Something went wrong. Please try again.',
+            });
+        })
+        .finally(() => {
+            // Reset button state
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalBtnText;
+        });
+    }
+
     function previewImage(input) {
         if (input.files && input.files[0]) {
+            const file = input.files[0];
+            
+            // Basic validation
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file');
+                input.value = '';
+                return;
+            }
+
             var reader = new FileReader();
             
             reader.onload = function(e) {
-                const imgContainer = input.closest('.col-span-full').querySelector('.h-20');
+                const imgContainer = document.getElementById('photo-preview-container');
                 // Remove existing content
                 imgContainer.innerHTML = '';
                 // Add new image
@@ -102,7 +170,7 @@
                 imgContainer.appendChild(img);
             }
             
-            reader.readAsDataURL(input.files[0]);
+            reader.readAsDataURL(file);
         }
     }
 </script>

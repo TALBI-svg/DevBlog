@@ -33,6 +33,14 @@ class ProfileController extends Controller
             $user->update(['profile_photo_path' => $path]);
         }
 
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile updated successfully.',
+                'image_url' => $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : null,
+            ]);
+        }
+
         return back()->with('success', 'Profile updated successfully.');
     }
 }
