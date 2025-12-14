@@ -15,9 +15,19 @@ class CommentController extends Controller
             'content' => 'required|string',
         ]);
 
-        $comment = $post->comments()->create($validated);
+        $comment = $post->comments()->create([
+            'content' => $validated['content'],
+            'user_id' => auth()->id(),
+        ]);
 
         if ($request->wantsJson()) {
+            $comment->load('user');
+            
+            // Add profile photo URL to response
+            $comment->user->profile_photo_url = $comment->user->profile_photo_path 
+                ? asset('storage/' . $comment->user->profile_photo_path) 
+                : null;
+
             return response()->json([
                 'success' => true,
                 'message' => 'Comment added successfully',

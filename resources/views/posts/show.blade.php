@@ -44,6 +44,7 @@
                     Back to Posts
                 </a>
                 
+                @auth
                 <div class="flex space-x-3">
                     <a href="{{ route('posts.edit', $post) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                         <svg class="-ml-1 mr-2 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,6 +63,7 @@
                         </button>
                     </form>
                 </div>
+                @endauth
             </div>
         </article>
 
@@ -84,18 +86,23 @@
                     @forelse ($post->comments as $comment)
                         <div class="flex space-x-4 group" id="comment-{{ $comment->id }}">
                             <div class="flex-shrink-0">
-                                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold shadow-sm">
-                                    {{ strtoupper(substr($comment->content, 0, 1)) }}
+                                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden">
+                                    @if($comment->user && $comment->user->profile_photo_path)
+                                        <img src="{{ asset('storage/' . $comment->user->profile_photo_path) }}" alt="{{ $comment->user->name }}" class="h-full w-full object-cover">
+                                    @else
+                                        {{ strtoupper(substr($comment->user ? $comment->user->name : 'User', 0, 1)) }}
+                                    @endif
                                 </div>
                             </div>
                             <div class="flex-grow">
                                 <div class="bg-gray-50 rounded-2xl rounded-tl-none px-6 py-4 relative group-hover:bg-gray-100 transition-colors duration-200">
                                     <div class="flex items-center justify-between mb-2">
-                                        <span class="text-sm font-semibold text-gray-900">User</span>
+                                        <span class="text-sm font-semibold text-gray-900">{{ $comment->user ? $comment->user->name : 'User' }}</span>
                                         <span class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
                                     </div>
                                     <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">{{ $comment->content }}</p>
                                     
+                                    @auth
                                     <form action="{{ route('comments.destroy', $comment) }}" method="POST" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delete-comment-form">
                                         @csrf
                                         @method('DELETE')
@@ -105,6 +112,7 @@
                                             </svg>
                                         </button>
                                     </form>
+                                    @endauth
                                 </div>
                             </div>
                         </div>
@@ -118,6 +126,7 @@
                 <!-- Add Comment Form -->
                 <div class="bg-gray-50 rounded-xl p-6 border border-gray-100">
                     <h4 class="text-lg font-semibold text-gray-900 mb-4">Leave a comment</h4>
+                    @auth
                     <form id="add-comment-form" action="{{ route('comments.store', $post) }}" method="POST">
                         @csrf
                         <div class="mb-4">
@@ -133,6 +142,19 @@
                             </button>
                         </div>
                     </form>
+                    @else
+                    <div class="bg-white rounded-lg p-6 text-center shadow-sm">
+                        <p class="text-gray-600 mb-4">Please log in to share your thoughts.</p>
+                        <div class="flex justify-center space-x-4">
+                            <a href="{{ route('login') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                Log in
+                            </a>
+                            <a href="{{ route('register') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                Register
+                            </a>
+                        </div>
+                    </div>
+                    @endauth
                 </div>
             </div>
         </section>
@@ -174,14 +196,17 @@
                         const commentHtml = `
                             <div class="flex space-x-4 group" id="comment-${data.comment.id}">
                                 <div class="flex-shrink-0">
-                                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold shadow-sm">
-                                        ${data.comment.content.charAt(0).toUpperCase()}
+                                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden">
+                                        ${data.comment.user && data.comment.user.profile_photo_url ? 
+                                            `<img src="${data.comment.user.profile_photo_url}" alt="${data.comment.user.name}" class="h-full w-full object-cover">` :
+                                            (data.comment.user ? data.comment.user.name : 'User').charAt(0).toUpperCase()
+                                        }
                                     </div>
                                 </div>
                                 <div class="flex-grow">
                                     <div class="bg-gray-50 rounded-2xl rounded-tl-none px-6 py-4 relative group-hover:bg-gray-100 transition-colors duration-200">
                                         <div class="flex items-center justify-between mb-2">
-                                            <span class="text-sm font-semibold text-gray-900">User</span>
+                                            <span class="text-sm font-semibold text-gray-900">${data.comment.user ? data.comment.user.name : 'User'}</span>
                                             <span class="text-xs text-gray-500">Just now</span>
                                         </div>
                                         <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">${data.comment.content}</p>

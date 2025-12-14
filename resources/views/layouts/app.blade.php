@@ -62,13 +62,45 @@
                         </a>
                     </div>
                 </div>
-                <div class="hidden sm:flex sm:items-center sm:ml-6">
+                <div class="hidden sm:flex sm:items-center sm:ml-6 space-x-4">
                     <a href="{{ route('posts.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5">
                         <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
                         </svg>
                         Write Post
                     </a>
+                    @auth
+                        <div class="ml-3 relative" x-data="{ open: false }">
+                            <div>
+                                <button @click="open = !open" type="button" class="bg-white rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                                    <span class="sr-only">Open user menu</span>
+                                    <div class="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold border border-primary-200 overflow-hidden">
+                                        @if(Auth::user()->profile_photo_path)
+                                            <img src="{{ asset('storage/' . Auth::user()->profile_photo_path) }}" alt="{{ Auth::user()->name }}" class="h-full w-full object-cover">
+                                        @else
+                                            {{ substr(Auth::user()->name, 0, 1) }}
+                                        @endif
+                                    </div>
+                                </button>
+                            </div>
+                            <div x-show="open" @click.away="open = false" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1" style="display: none;">
+                                <div class="px-4 py-2 text-xs text-gray-500 border-b border-gray-100">
+                                    Signed in as<br>
+                                    <span class="font-bold text-gray-900 truncate block">{{ Auth::user()->name }}</span>
+                                </div>
+                                <a href="{{ route('profile.show') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1" id="user-menu-item-0">Your Profile</a>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1" id="user-menu-item-2">
+                                        Sign out
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    @else
+                        <a href="{{ route('login') }}" class="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Log in</a>
+                        <a href="{{ route('register') }}" class="bg-primary-600 text-white hover:bg-primary-700 px-4 py-2 rounded-md text-sm font-medium transition-colors">Register</a>
+                    @endauth
                 </div>
                 
                 <!-- Mobile menu button -->
@@ -226,15 +258,27 @@
                 </button>
             </div>
             
-            <!-- Dummy User Profile Section -->
+            <!-- User Profile Section -->
             <div class="flex items-center space-x-3 px-1">
-                <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold border border-primary-200">
-                    G
-                </div>
-                <div>
-                    <div class="text-sm font-semibold text-gray-900">Guest User</div>
-                    <div class="text-xs text-gray-500">Welcome back!</div>
-                </div>
+                @auth
+                    <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold border border-primary-200">
+                        {{ substr(Auth::user()->name, 0, 1) }}
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-900">{{ Auth::user()->name }}</div>
+                        <div class="text-xs text-gray-500">{{ Auth::user()->email }}</div>
+                    </div>
+                @else
+                    <div class="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 font-bold border border-gray-200">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-900">Guest User</div>
+                        <div class="text-xs text-gray-500">Please sign in</div>
+                    </div>
+                @endauth
             </div>
         </div>
 
@@ -248,12 +292,37 @@
                 </svg>
                 Latest Posts
             </a>
-            <a href="{{ route('posts.create') }}" class="group flex items-center px-4 py-3 text-base font-medium rounded-xl {{ request()->routeIs('posts.create') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50' }} transition-all duration-200">
-                <svg class="mr-4 h-6 w-6 {{ request()->routeIs('posts.create') ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-500' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                </svg>
-                Create New Post
-            </a>
+            
+            @auth
+                <a href="{{ route('posts.create') }}" class="group flex items-center px-4 py-3 text-base font-medium rounded-xl {{ request()->routeIs('posts.create') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50' }} transition-all duration-200">
+                    <svg class="mr-4 h-6 w-6 {{ request()->routeIs('posts.create') ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-500' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Create New Post
+                </a>
+                <form method="POST" action="{{ route('logout') }}" class="block">
+                    @csrf
+                    <button type="submit" class="w-full group flex items-center px-4 py-3 text-base font-medium rounded-xl text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200">
+                        <svg class="mr-4 h-6 w-6 text-gray-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Sign out
+                    </button>
+                </form>
+            @else
+                <a href="{{ route('login') }}" class="group flex items-center px-4 py-3 text-base font-medium rounded-xl {{ request()->routeIs('login') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50' }} transition-all duration-200">
+                    <svg class="mr-4 h-6 w-6 {{ request()->routeIs('login') ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-500' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                    Log in
+                </a>
+                <a href="{{ route('register') }}" class="group flex items-center px-4 py-3 text-base font-medium rounded-xl {{ request()->routeIs('register') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50' }} transition-all duration-200">
+                    <svg class="mr-4 h-6 w-6 {{ request()->routeIs('register') ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-500' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    Register
+                </a>
+            @endauth
         </div>
 
         <div class="p-6 border-t border-gray-100 bg-gray-50">
