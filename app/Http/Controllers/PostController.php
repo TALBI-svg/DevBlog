@@ -85,7 +85,9 @@ class PostController extends Controller
     // SHOW single post
     public function show(Post $post)
     {
-        $post->load(['comments.user', 'user']); // Eager load comments and post owner
+        $post->load(['comments' => function ($query) {
+            $query->latest();
+        }, 'comments.user', 'user']); // Eager load comments (sorted by latest) and post owner
         return view('posts.show', compact('post'));
     }
 

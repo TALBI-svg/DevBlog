@@ -102,7 +102,41 @@
                     </h3>
                 </div>
 
-                <div id="comments-list" class="space-y-8 mb-10">
+                <!-- Add Comment Form -->
+                <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 mb-10">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Leave a comment</h4>
+                    @auth
+                    <form id="add-comment-form" action="{{ route('comments.store', $post) }}" method="POST">
+                        @csrf
+                        <div class="mb-4">
+                            <label for="content" class="sr-only">Your Comment</label>
+                            <textarea name="content" id="content" rows="3" class="shadow-sm block w-full focus:ring-primary-500 focus:border-primary-500 sm:text-sm border-gray-300 rounded-lg p-4 transition-shadow duration-200 focus:shadow-md" placeholder="Share your thoughts..." required></textarea>
+                            @error('content')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5">
+                                Post Comment
+                            </button>
+                        </div>
+                    </form>
+                    @else
+                    <div class="bg-white rounded-lg p-6 text-center shadow-sm">
+                        <p class="text-gray-600 mb-4">Please log in to share your thoughts.</p>
+                        <div class="flex justify-center space-x-4">
+                            <a href="{{ route('login') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                Log in
+                            </a>
+                            <a href="{{ route('register') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                Register
+                            </a>
+                        </div>
+                    </div>
+                    @endauth
+                </div>
+
+                <div id="comments-list" class="space-y-8">
                     @forelse ($post->comments as $comment)
                         <div class="flex space-x-4 group" id="comment-{{ $comment->id }}">
                             <div class="flex-shrink-0">
@@ -143,39 +177,7 @@
                     @endforelse
                 </div>
 
-                <!-- Add Comment Form -->
-                <div class="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Leave a comment</h4>
-                    @auth
-                    <form id="add-comment-form" action="{{ route('comments.store', $post) }}" method="POST">
-                        @csrf
-                        <div class="mb-4">
-                            <label for="content" class="sr-only">Your Comment</label>
-                            <textarea name="content" id="content" rows="3" class="shadow-sm block w-full focus:ring-primary-500 focus:border-primary-500 sm:text-sm border-gray-300 rounded-lg p-4 transition-shadow duration-200 focus:shadow-md" placeholder="Share your thoughts..." required></textarea>
-                            @error('content')
-                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <div class="flex justify-end">
-                            <button type="submit" class="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5">
-                                Post Comment
-                            </button>
-                        </div>
-                    </form>
-                    @else
-                    <div class="bg-white rounded-lg p-6 text-center shadow-sm">
-                        <p class="text-gray-600 mb-4">Please log in to share your thoughts.</p>
-                        <div class="flex justify-center space-x-4">
-                            <a href="{{ route('login') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                                Log in
-                            </a>
-                            <a href="{{ route('register') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                                Register
-                            </a>
-                        </div>
-                    </div>
-                    @endauth
-                </div>
+
             </div>
         </section>
     </div>
@@ -244,7 +246,7 @@
                                 </div>
                             </div>
                         `;
-                        commentsList.insertAdjacentHTML('beforeend', commentHtml);
+                        commentsList.insertAdjacentHTML('afterbegin', commentHtml);
                         
                         // Update count
                         const countSpan = document.getElementById('comments-count');
