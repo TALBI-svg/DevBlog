@@ -9,10 +9,38 @@ use Illuminate\Support\Facades\Storage;
 class PostController extends Controller
 {
     // READ all posts (Blade)
-    public function index()
+    public function index(Request $request)
     {
-        // Show 6 posts per page
-        $posts = Post::with('user')->latest()->paginate(6);
+        $query = Post::with('user')->latest();
+
+        // Search by title or user name
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filter by start date
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        // Filter by end date
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Show 6 posts per page and preserve query parameters
+        $posts = $query->paginate(6)->withQueryString();
+        
+        if ($request->ajax()) {
+            return view('posts.partials.posts-list', compact('posts'));
+        }
+        
         return view('posts.index', compact('posts'));
     }
 

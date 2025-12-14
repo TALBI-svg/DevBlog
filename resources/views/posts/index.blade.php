@@ -10,6 +10,7 @@
         <p class="text-lg text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
             Discover stories, thinking, and expertise from writers on any topic.
         </p>
+        
         @auth
         <button @click="openCreateModal()" class="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-full text-white bg-primary-600 hover:bg-primary-700 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -27,17 +28,76 @@
         @endauth
     </div>
 
-    <!-- Posts Grid -->
-    <div id="posts-grid" class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        @foreach ($posts as $post)
-            @include('posts.partials.post-card', ['post' => $post])
-        @endforeach
+    <!-- Search Section -->
+    <div class="max-w-2xl mx-auto mb-12 px-4">
+        <form action="{{ route('posts.index') }}" method="GET" class="relative">
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg class="h-6 w-6 text-gray-400 group-focus-within:text-primary-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input type="text" name="search" id="search" value="{{ request('search') }}" 
+                    class="block w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-full leading-5 bg-white placeholder-gray-400 focus:outline-none focus:placeholder-gray-300 focus:border-primary-500 focus:ring-0 shadow-sm hover:border-gray-200 transition-all duration-200 text-lg" 
+                    placeholder="Search by title or author...">
+            </div>
+        </form>
     </div>
 
-    <!-- Pagination -->
-    <div class="mt-12">
-        {{ $posts->links() }}
+    <!-- Posts Grid -->
+    <div id="posts-wrapper">
+        @include('posts.partials.posts-list')
     </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('search');
+            const postsWrapper = document.getElementById('posts-wrapper');
+            let searchTimeout;
+
+            // Prevent form submission on enter
+            document.querySelector('form').addEventListener('submit', function(e) {
+                e.preventDefault();
+            });
+
+            searchInput.addEventListener('input', function(e) {
+                clearTimeout(searchTimeout);
+                
+                searchTimeout = setTimeout(() => {
+                    const query = this.value;
+                    const url = new URL("{{ route('posts.index') }}");
+                    if (query) {
+                        url.searchParams.set('search', query);
+                    }
+
+                    // Add loading state opacity
+                    postsWrapper.style.opacity = '0.5';
+
+                    fetch(url, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'text/html'
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        postsWrapper.innerHTML = html;
+                        postsWrapper.style.opacity = '1';
+                        
+                        // Update browser URL without reload
+                        window.history.pushState({}, '', url);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        postsWrapper.style.opacity = '1';
+                    });
+                }, 300); // Debounce delay
+            });
+        });
+    </script>
+    @endpush
+
 
     <!-- Create Post Modal -->
     <div x-show="showCreateModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
