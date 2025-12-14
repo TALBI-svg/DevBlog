@@ -18,7 +18,7 @@
                     <p class="mt-2 text-gray-500">Share your thoughts, ideas, and knowledge with the community.</p>
                 </header>
 
-                <form action="{{ route('posts.store') }}" method="POST" class="space-y-6">
+                <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                     @csrf
                     
                     <div>
@@ -40,6 +40,26 @@
                         @error('title')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+                    </div>
+
+                    <div>
+                        <label for="image" class="block text-sm font-semibold text-gray-700 mb-2">Cover Image (Optional)</label>
+                        <input type="file" name="image" id="image" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 transition-colors">
+                        @error('image')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <!-- Image Preview -->
+                        <div id="image-preview-container" class="mt-4 hidden relative group w-fit">
+                            <img id="image-preview" src="#" alt="Image Preview" class="max-w-full h-auto rounded-lg shadow-sm max-h-64 object-cover block">
+                            <button type="button" id="remove-image" class="absolute inset-0 w-full h-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg cursor-pointer backdrop-blur-sm">
+                                <div class="text-white flex flex-col items-center">
+                                    <svg class="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    <span class="text-sm font-medium">Remove Image</span>
+                                </div>
+                            </button>
+                        </div>
                     </div>
 
                     <div>
@@ -73,4 +93,36 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.getElementById('image').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const previewContainer = document.getElementById('image-preview-container');
+            const previewImage = document.getElementById('image-preview');
+
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.classList.remove('hidden');
+                }
+
+                reader.readAsDataURL(file);
+            } else {
+                previewContainer.classList.add('hidden');
+                previewImage.src = '#';
+            }
+        });
+
+        document.getElementById('remove-image').addEventListener('click', function() {
+            const input = document.getElementById('image');
+            const previewContainer = document.getElementById('image-preview-container');
+            const previewImage = document.getElementById('image-preview');
+
+            input.value = ''; // Clear file input
+            previewContainer.classList.add('hidden'); // Hide preview
+            previewImage.src = '#'; // Reset image source
+        });
+    </script>
 @endsection

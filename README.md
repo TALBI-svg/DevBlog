@@ -57,3 +57,20 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Database Seeding
+
+To populate the database with test data, you can use the following commands:
+
+### Seed All Data
+This command will truncate the `users` table, create a test user (`test@example.com`), and generate 10 posts with random cover images.
+```bash
+php artisan db:seed
+```
+
+### Seed Posts Only
+If you want to generate posts without resetting users, you can run the `PostSeeder` specifically:
+```bash
+php artisan db:seed --class=PostSeeder
+```
+> **Note:** The `PostSeeder` uses `picsum.photos` to download random images for each post. These images are stored in `storage/app/public/posts`.

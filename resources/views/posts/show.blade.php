@@ -13,6 +13,12 @@
 
         <!-- Post Content -->
         <article class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-12">
+            @if($post->image_path)
+                <div class="w-full h-64 sm:h-96 overflow-hidden">
+                    <img src="{{ asset('storage/' . $post->image_path) }}" alt="{{ $post->title }}" class="w-full h-full object-cover">
+                </div>
+            @endif
+            
             <div class="p-8 sm:p-12">
                 <header class="mb-8">
                     <div class="flex items-center space-x-2 text-sm text-gray-500 mb-4">
@@ -45,7 +51,7 @@
                         </svg>
                         Edit
                     </a>
-                    <form action="{{ route('posts.destroy', $post) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this post?');">
+                    <form id="delete-post-form" action="{{ route('posts.destroy', $post) }}" method="POST">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
@@ -68,15 +74,15 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
                         </svg>
                         Comments 
-                        <span class="ml-3 bg-gray-100 text-gray-600 text-sm font-semibold px-2.5 py-0.5 rounded-full">
+                        <span id="comments-count" class="ml-3 bg-gray-100 text-gray-600 text-sm font-semibold px-2.5 py-0.5 rounded-full">
                             {{ $post->comments->count() }}
                         </span>
                     </h3>
                 </div>
 
-                <div class="space-y-8 mb-10">
+                <div id="comments-list" class="space-y-8 mb-10">
                     @forelse ($post->comments as $comment)
-                        <div class="flex space-x-4 group">
+                        <div class="flex space-x-4 group" id="comment-{{ $comment->id }}">
                             <div class="flex-shrink-0">
                                 <div class="h-10 w-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold shadow-sm">
                                     {{ strtoupper(substr($comment->content, 0, 1)) }}
@@ -90,10 +96,10 @@
                                     </div>
                                     <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">{{ $comment->content }}</p>
                                     
-                                    <form action="{{ route('comments.destroy', $comment) }}" method="POST" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                    <form action="{{ route('comments.destroy', $comment) }}" method="POST" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delete-comment-form">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-white" title="Delete comment" onclick="return confirm('Delete this comment?')">
+                                        <button type="submit" class="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-white" title="Delete comment">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                             </svg>
@@ -103,7 +109,7 @@
                             </div>
                         </div>
                     @empty
-                        <div class="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                        <div id="no-comments-message" class="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
                             <p class="text-gray-500 italic">No comments yet. Be the first to share your thoughts!</p>
                         </div>
                     @endforelse
@@ -112,7 +118,7 @@
                 <!-- Add Comment Form -->
                 <div class="bg-gray-50 rounded-xl p-6 border border-gray-100">
                     <h4 class="text-lg font-semibold text-gray-900 mb-4">Leave a comment</h4>
-                    <form action="{{ route('comments.store', $post) }}" method="POST">
+                    <form id="add-comment-form" action="{{ route('comments.store', $post) }}" method="POST">
                         @csrf
                         <div class="mb-4">
                             <label for="content" class="sr-only">Your Comment</label>
@@ -131,4 +137,251 @@
             </div>
         </section>
     </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add Comment
+        const commentForm = document.getElementById('add-comment-form');
+        if (commentForm) {
+            commentForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const action = this.action;
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalText = submitButton.innerHTML;
+
+                // Disable button
+                submitButton.disabled = true;
+                submitButton.innerHTML = 'Posting...';
+
+                fetch(action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Add comment to DOM
+                        const commentsList = document.getElementById('comments-list');
+                        const emptyState = document.getElementById('no-comments-message');
+                        if (emptyState) emptyState.remove();
+
+                        const commentHtml = `
+                            <div class="flex space-x-4 group" id="comment-${data.comment.id}">
+                                <div class="flex-shrink-0">
+                                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold shadow-sm">
+                                        ${data.comment.content.charAt(0).toUpperCase()}
+                                    </div>
+                                </div>
+                                <div class="flex-grow">
+                                    <div class="bg-gray-50 rounded-2xl rounded-tl-none px-6 py-4 relative group-hover:bg-gray-100 transition-colors duration-200">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-sm font-semibold text-gray-900">User</span>
+                                            <span class="text-xs text-gray-500">Just now</span>
+                                        </div>
+                                        <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">${data.comment.content}</p>
+                                        
+                                        <form action="/comments/${data.comment.id}" method="POST" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delete-comment-form">
+                                            <input type="hidden" name="_token" value="${document.querySelector('input[name="_token"]').value}">
+                                            <input type="hidden" name="_method" value="DELETE">
+                                            <button type="submit" class="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-white" title="Delete comment">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        commentsList.insertAdjacentHTML('beforeend', commentHtml);
+                        
+                        // Update count
+                        const countSpan = document.getElementById('comments-count');
+                        if(countSpan) countSpan.textContent = parseInt(countSpan.textContent) + 1;
+
+                        commentForm.reset();
+                        
+                        Swal.fire({
+                            toast: true,
+                            position: 'bottom-end',
+                            icon: 'success',
+                            title: 'Comment added successfully',
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Something went wrong!',
+                    });
+                })
+                .finally(() => {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                });
+            });
+        }
+
+        // Delete Comment (Delegation)
+        document.getElementById('comments-list').addEventListener('submit', function(e) {
+            if (e.target.classList.contains('delete-comment-form')) {
+                e.preventDefault();
+                const form = e.target;
+                
+                Swal.fire({
+                    title: 'Delete Comment?',
+                    text: "Are you sure you want to remove this comment?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#3b82f6',
+                    confirmButtonText: 'Yes, delete it!',
+                    reverseButtons: true,
+                    focusCancel: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value
+                            },
+                            body: new FormData(form)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const commentElement = form.closest('.group');
+                                commentElement.style.transition = 'all 0.3s ease';
+                                commentElement.style.opacity = '0';
+                                commentElement.style.transform = 'scale(0.9)';
+                                
+                                setTimeout(() => {
+                                    commentElement.remove();
+                                    // Check if list is empty
+                                    const commentsList = document.getElementById('comments-list');
+                                    if (commentsList.children.length === 0) {
+                                        commentsList.innerHTML = `
+                                            <div id="no-comments-message" class="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                                <p class="text-gray-500 italic">No comments yet. Be the first to share your thoughts!</p>
+                                            </div>
+                                        `;
+                                    }
+                                }, 300);
+
+                                // Update count
+                                const countSpan = document.getElementById('comments-count');
+                                if(countSpan) countSpan.textContent = Math.max(0, parseInt(countSpan.textContent) - 1);
+                                
+                                Swal.fire({
+                                    toast: true,
+                                    position: 'bottom-end',
+                                    icon: 'success',
+                                    title: 'Comment deleted successfully',
+                                    showConfirmButton: false,
+                                    timer: 3000
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: 'Something went wrong!',
+                            });
+                        });
+                    }
+                });
+            }
+        });
+
+        // Delete Post
+        const deletePostForm = document.getElementById('delete-post-form');
+        if (deletePostForm) {
+            deletePostForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                Swal.fire({
+                    title: 'Delete Post?',
+                    html: 'This action cannot be undone.<br>Please type <b>delete</b> to confirm.',
+                    input: 'text',
+                    inputAttributes: {
+                        autocapitalize: 'off',
+                        placeholder: 'Type "delete"'
+                    },
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#3b82f6',
+                    confirmButtonText: 'Yes, delete it!',
+                    reverseButtons: true,
+                    focusCancel: true,
+                    preConfirm: (value) => {
+                        if (value !== 'delete') {
+                            Swal.showValidationMessage('You need to type "delete" to confirm!')
+                        }
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const submitButton = this.querySelector('button[type="submit"]');
+                        const originalText = submitButton.innerHTML;
+                        submitButton.disabled = true;
+                        submitButton.innerHTML = `
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Deleting...
+                        `;
+
+                        fetch(this.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': this.querySelector('input[name="_token"]').value
+                            },
+                            body: new FormData(this)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Deleted!',
+                                    text: 'Your post has been deleted.',
+                                    showConfirmButton: false,
+                                    timer: 1500
+                                }).then(() => {
+                                    window.location.href = data.redirect || '/posts';
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: 'Something went wrong!',
+                            });
+                            submitButton.disabled = false;
+                            submitButton.innerHTML = originalText;
+                        });
+                    }
+                });
+            });
+        }
+    });
+</script>
 @endsection

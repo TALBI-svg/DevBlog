@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     <title>Laravel Blog</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -38,9 +40,9 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="h-full flex flex-col antialiased text-gray-900">
+<body class="h-full flex flex-col antialiased text-gray-900" x-data="{ open: false }" x-init="$watch('open', value => value ? document.body.classList.add('overflow-hidden') : document.body.classList.remove('overflow-hidden'))">
     <!-- Navigation -->
-    <nav x-data="{ open: false }" class="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
+    <nav class="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex">
@@ -83,22 +85,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Mobile menu -->
-        <div class="sm:hidden" id="mobile-menu" x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" x-cloak>
-            <div class="pt-2 pb-3 space-y-1">
-                <a href="{{ route('posts.index') }}" class="bg-primary-50 border-primary-500 text-primary-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
-                    Latest Posts
-                </a>
-            </div>
-            <div class="pt-4 pb-4 border-t border-gray-200">
-                <div class="mt-3 space-y-1">
-                    <a href="{{ route('posts.create') }}" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
-                        Create New Post
-                    </a>
-                </div>
-            </div>
-        </div>
     </nav>
 
     <!-- Main Content -->
@@ -136,22 +122,145 @@
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-100">
         <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-            <div class="md:flex md:items-center md:justify-between">
-                <div class="flex justify-center md:order-2 space-x-6">
-                    <a href="#" class="text-gray-400 hover:text-gray-500 transition-colors">
-                        <span class="sr-only">GitHub</span>
-                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
-                        </svg>
-                    </a>
-                </div>
-                <div class="mt-8 md:mt-0 md:order-1">
-                    <p class="text-center text-base text-gray-400">
-                        &copy; {{ date('Y') }} DevBlog. Crafted with Laravel & Tailwind.
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Brand Section -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2">
+                         <div class="bg-primary-600 text-white p-1.5 rounded-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                            </svg>
+                        </div>
+                        <span class="text-xl font-bold text-gray-900 tracking-tight">DevBlog</span>
+                    </div>
+                    <p class="text-gray-500 text-sm leading-relaxed">
+                        A modern platform for developers to share knowledge, tutorials, and experiences. Built with passion using Laravel and Tailwind CSS.
                     </p>
                 </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">Navigation</h3>
+                    <ul class="space-y-3">
+                        <li>
+                            <a href="{{ route('posts.index') }}" class="text-base text-gray-500 hover:text-primary-600 transition-colors">
+                                Latest Posts
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('posts.create') }}" class="text-base text-gray-500 hover:text-primary-600 transition-colors">
+                                Write a Post
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Social & Legal -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">Connect</h3>
+                    <div class="flex space-x-6 mb-6">
+                        <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors">
+                            <span class="sr-only">GitHub</span>
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-blue-400 transition-colors">
+                            <span class="sr-only">Twitter</span>
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-12 border-t border-gray-100 pt-8">
+                <p class="text-base text-gray-400 text-center">
+                    &copy; {{ date('Y') }} DevBlog. All rights reserved.
+                </p>
             </div>
         </div>
     </footer>
+
+    <!-- Mobile menu overlay -->
+    <div x-show="open" class="fixed inset-0 z-[2000] bg-gray-900/80 backdrop-blur-sm sm:hidden" 
+         x-transition:enter="transition-opacity ease-linear duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity ease-linear duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click="open = false"
+         aria-hidden="true"
+         x-cloak>
+    </div>
+
+    <!-- Mobile menu panel -->
+    <div class="fixed inset-y-0 left-0 z-[3000] w-full max-w-xs bg-white shadow-2xl sm:hidden transform transition ease-in-out duration-300 flex flex-col"
+         id="mobile-menu" 
+         x-show="open" 
+         x-transition:enter="transition ease-in-out duration-300 transform" 
+         x-transition:enter-start="-translate-x-full" 
+         x-transition:enter-end="translate-x-0" 
+         x-transition:leave="transition ease-in-out duration-300 transform" 
+         x-transition:leave-start="translate-x-0" 
+         x-transition:leave-end="-translate-x-full" 
+         x-cloak>
+         
+        <div class="px-6 pt-8 pb-6 border-b border-gray-50 bg-gray-50">
+            <div class="flex items-center justify-between mb-6">
+                 <div class="flex items-center space-x-3">
+                    <div class="bg-gradient-to-br from-primary-600 to-primary-700 text-white p-2.5 rounded-xl shadow-lg shadow-primary-500/30">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                        </svg>
+                    </div>
+                    <span class="text-xl font-bold text-gray-900 tracking-tight">DevBlog</span>
+                </div>
+                <button @click="open = false" type="button" class="rounded-full p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-200">
+                    <span class="sr-only">Close menu</span>
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Dummy User Profile Section -->
+            <div class="flex items-center space-x-3 px-1">
+                <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold border border-primary-200">
+                    G
+                </div>
+                <div>
+                    <div class="text-sm font-semibold text-gray-900">Guest User</div>
+                    <div class="text-xs text-gray-500">Welcome back!</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-3 py-6 space-y-2 flex-1 overflow-y-auto">
+            <div class="px-4 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Menu
+            </div>
+            <a href="{{ route('posts.index') }}" class="group flex items-center px-4 py-3 text-base font-medium rounded-xl {{ request()->routeIs('posts.index') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50' }} transition-all duration-200">
+                <svg class="mr-4 h-6 w-6 {{ request()->routeIs('posts.index') ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-500' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                Latest Posts
+            </a>
+            <a href="{{ route('posts.create') }}" class="group flex items-center px-4 py-3 text-base font-medium rounded-xl {{ request()->routeIs('posts.create') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50' }} transition-all duration-200">
+                <svg class="mr-4 h-6 w-6 {{ request()->routeIs('posts.create') ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-500' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                Create New Post
+            </a>
+        </div>
+
+        <div class="p-6 border-t border-gray-100 bg-gray-50">
+            <p class="text-center text-xs text-gray-400">
+                &copy; {{ date('Y') }} DevBlog. <br> Crafted with Laravel & Tailwind.
+            </p>
+        </div>
+    </div>
 </body>
 </html>

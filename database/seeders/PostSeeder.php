@@ -3,31 +3,13 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\Post;
 
 class PostSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('posts')->insert([
-            [
-                'title' => 'First Post',
-                'description' => 'This is the first post description.',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'title' => 'Second Post',
-                'description' => 'This is the second post description.',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'title' => 'Third Post',
-                'description' => 'This is the third post description.',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        // Generate 10 posts using the factory (which handles image generation)
+        Post::factory(10)->create();
     }
 }

@@ -22,7 +22,7 @@
                     <p class="mt-2 text-gray-500">Update your article content or fix any typos.</p>
                 </header>
 
-                <form action="{{ route('posts.update', $post) }}" method="POST" class="space-y-6">
+                <form action="{{ route('posts.update', $post) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                     @csrf
                     @method('PUT')
                     
@@ -43,6 +43,19 @@
                             @enderror
                         </div>
                         @error('title')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="image" class="block text-sm font-semibold text-gray-700 mb-2">Cover Image (Optional)</label>
+                        @if($post->image_path)
+                            <div class="mb-4">
+                                <img src="{{ asset('storage/' . $post->image_path) }}" alt="Current cover image" class="h-48 w-full object-cover rounded-lg">
+                            </div>
+                        @endif
+                        <input type="file" name="image" id="image" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 transition-colors">
+                        @error('image')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
@@ -27,7 +28,15 @@ class PostController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('posts', 'public');
+            $validated['image_path'] = $path;
+        }
+
+        unset($validated['image']); // Remove image from validated array as it's not a column
 
         Post::create($validated);
 
@@ -54,7 +63,19 @@ class PostController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        if ($request->hasFile('image')) {
+            // Delete old image
+            if ($post->image_path) {
+                Storage::disk('public')->delete($post->image_path);
+            }
+            $path = $request->file('image')->store('posts', 'public');
+            $validated['image_path'] = $path;
+        }
+
+        unset($validated['image']);
 
         $post->update($validated);
 
@@ -65,7 +86,19 @@ class PostController extends Controller
     // DELETE post
     public function destroy(Post $post)
     {
+        if ($post->image_path) {
+            Storage::disk('public')->delete($post->image_path);
+        }
+
         $post->delete();
+
+        if (request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Post deleted successfully',
+                'redirect' => route('posts.index')
+            ]);
+        }
 
         return redirect()->route('posts.index')
                          ->with('success', 'Post deleted successfully');

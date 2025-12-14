@@ -15,7 +15,15 @@ class CommentController extends Controller
             'content' => 'required|string',
         ]);
 
-        $post->comments()->create($validated);
+        $comment = $post->comments()->create($validated);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Comment added successfully',
+                'comment' => $comment
+            ]);
+        }
 
         return back()->with('success', 'Comment added successfully');
     }
@@ -24,6 +32,13 @@ class CommentController extends Controller
     public function destroy(Comment $comment)
     {
         $comment->delete();
+
+        if (request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Comment deleted successfully'
+            ]);
+        }
 
         return back()->with('success', 'Comment deleted successfully');
     }
