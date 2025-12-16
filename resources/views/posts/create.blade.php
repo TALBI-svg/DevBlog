@@ -1,31 +1,31 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="max-w-3xl mx-auto">
+    <div class="max-w-3xl mx-auto px-3 sm:px-0 py-6 sm:py-12">
         <!-- Breadcrumb -->
-        <nav class="flex items-center text-sm font-medium text-gray-500 mb-8" aria-label="Breadcrumb">
+        <nav class="flex items-center text-xs sm:text-sm font-medium text-gray-500 mb-4 sm:mb-8" aria-label="Breadcrumb">
             <a href="{{ route('posts.index') }}" class="hover:text-primary-600 transition-colors">Home</a>
-            <svg class="w-5 h-5 mx-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5 mx-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
             </svg>
             <span class="text-gray-900">Create Post</span>
         </nav>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="p-8 sm:p-10">
-                <header class="mb-8 border-b border-gray-100 pb-8">
-                    <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Create New Post</h1>
-                    <p class="mt-2 text-gray-500">Share your thoughts, ideas, and knowledge with the community.</p>
+        <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-4 sm:p-10">
+                <header class="mb-4 sm:mb-8 border-b border-gray-100 pb-4 sm:pb-8">
+                    <h1 class="text-lg sm:text-3xl font-extrabold text-gray-900 tracking-tight">Create New Post</h1>
+                    <p class="mt-1 sm:mt-2 text-xs sm:text-base text-gray-500">Share your thoughts, ideas, and knowledge with the community.</p>
                 </header>
 
-                <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4 sm:space-y-6">
                     @csrf
                     
                     <div>
-                        <label for="title" class="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+                        <label for="title" class="block text-xs font-semibold text-gray-700 mb-1 sm:mb-2">Title</label>
                         <div class="relative rounded-md shadow-sm">
                             <input type="text" name="title" id="title" 
-                                class="block w-full rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 sm:text-sm p-3 transition-shadow duration-200 focus:shadow-md @error('title') border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 @enderror" 
+                                class="block w-full rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 focus:outline-none text-xs sm:text-sm p-2 sm:p-3 transition-shadow duration-200 focus:shadow-md @error('title') border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 @enderror" 
                                 placeholder="Enter a catchy title..." 
                                 value="{{ old('title') }}" 
                                 required>
@@ -38,35 +38,35 @@
                             @enderror
                         </div>
                         @error('title')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            <p class="mt-1 sm:mt-2 text-xs sm:text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
 
                     <div>
-                        <label for="image" class="block text-sm font-semibold text-gray-700 mb-2">Cover Image (Optional)</label>
-                        <input type="file" name="image" id="image" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 transition-colors">
+                        <label for="image" class="block text-xs font-semibold text-gray-700 mb-1 sm:mb-2">Cover Image (Optional)</label>
+                        <input type="file" name="image" id="image" class="block w-full text-xs sm:text-sm text-gray-500 file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-3 sm:file:px-4 file:rounded-full file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 transition-colors">
                         @error('image')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            <p class="mt-1 sm:mt-2 text-xs sm:text-sm text-red-600">{{ $message }}</p>
                         @enderror
                         <!-- Image Preview -->
-                        <div id="image-preview-container" class="mt-4 hidden relative group w-fit">
-                            <img id="image-preview" src="#" alt="Image Preview" class="max-w-full h-auto rounded-lg shadow-sm max-h-64 object-cover block">
+                        <div id="image-preview-container" class="mt-3 sm:mt-4 hidden relative group w-fit">
+                            <img id="image-preview" src="#" alt="Image Preview" class="max-w-full h-auto rounded-lg shadow-sm max-h-48 sm:max-h-64 object-cover block">
                             <button type="button" id="remove-image" class="absolute inset-0 w-full h-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg cursor-pointer backdrop-blur-sm">
                                 <div class="text-white flex flex-col items-center">
-                                    <svg class="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-6 h-6 sm:w-8 sm:h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
-                                    <span class="text-sm font-medium">Remove Image</span>
+                                    <span class="text-xs sm:text-sm font-medium">Remove Image</span>
                                 </div>
                             </button>
                         </div>
                     </div>
 
                     <div>
-                        <label for="content" class="block text-sm font-semibold text-gray-700 mb-2">Content</label>
+                        <label for="content" class="block text-xs font-semibold text-gray-700 mb-1 sm:mb-2">Content</label>
                         <div class="relative rounded-md shadow-sm">
-                            <textarea name="content" id="content" rows="10" 
-                                class="block w-full rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 sm:text-sm p-4 transition-shadow duration-200 focus:shadow-md @error('content') border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 @enderror" 
+                            <textarea name="content" id="content" rows="6" 
+                                class="block w-full rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 focus:outline-none text-xs sm:text-sm p-2 sm:p-4 transition-shadow duration-200 focus:shadow-md @error('content') border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 @enderror" 
                                 placeholder="Write your article content here..." 
                                 required>{{ old('content') }}</textarea>
                             @error('content')
@@ -83,9 +83,9 @@
                         <p class="mt-2 text-sm text-gray-500">Markdown is supported for basic formatting.</p>
                     </div>
 
-                    <div class="pt-6 border-t border-gray-100 flex items-center justify-end space-x-4">
-                        <a href="{{ route('posts.index') }}" class="text-gray-600 hover:text-gray-900 font-medium text-sm px-4 py-2 transition-colors">Cancel</a>
-                        <button type="submit" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5">
+                    <div class="pt-4 sm:pt-6 border-t border-gray-100 flex flex-col-reverse sm:flex-row items-center justify-end gap-3 sm:gap-0 sm:space-x-4">
+                        <a href="{{ route('posts.index') }}" class="w-full sm:w-auto text-center text-gray-600 hover:text-gray-900 font-medium text-xs px-4 py-2.5 sm:py-2 transition-colors">Cancel</a>
+                        <button type="submit" class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 sm:px-6 sm:py-3 border border-transparent text-xs sm:text-base font-medium rounded-full shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5">
                             Publish Post
                         </button>
                     </div>

@@ -19,18 +19,18 @@
             <time datetime="{{ $post->created_at }}">{{ $post->created_at->format('M d, Y') }}</time>
         </div>
         
-        <h2 class="text-xl font-bold text-gray-900 mb-3 line-clamp-2 hover:text-primary-600 transition-colors">
+        <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 line-clamp-2 hover:text-primary-600 transition-colors">
             <a href="{{ route('posts.show', $post) }}">
                 {{ $post->title }}
             </a>
         </h2>
         
-        <p class="text-gray-600 mb-6 line-clamp-3 text-sm leading-relaxed flex-1">
+        <p class="text-gray-600 mb-6 line-clamp-3 text-xs sm:text-sm leading-relaxed flex-1">
             {{ Str::limit($post->content, 120) }}
         </p>
         
         <div class="pt-6 border-t border-gray-100 flex items-center justify-between mt-auto">
-            <div class="flex items-center text-sm text-gray-500">
+            <div class="flex items-center text-xs sm:text-sm text-gray-500">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
                 </svg>
@@ -52,7 +52,7 @@
                         </button>
                     @endif
                 @endauth
-                <a href="{{ route('posts.show', $post) }}" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
+                <a href="{{ route('posts.show', $post) }}" class="text-primary-600 hover:text-primary-700 font-medium text-xs sm:text-sm inline-flex items-center group">
                     Read more
                     <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
