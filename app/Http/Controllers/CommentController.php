@@ -38,9 +38,39 @@ class CommentController extends Controller
         return back()->with('success', 'Comment added successfully');
     }
 
+    // UPDATE comment
+    public function update(Request $request, Comment $comment)
+    {
+        if ($comment->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $validated = $request->validate([
+            'content' => 'required|string',
+        ]);
+
+        $comment->update([
+            'content' => $validated['content']
+        ]);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Comment updated successfully',
+                'comment' => $comment
+            ]);
+        }
+
+        return back()->with('success', 'Comment updated successfully');
+    }
+
     // DELETE comment
     public function destroy(Comment $comment)
     {
+        if ($comment->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $comment->delete();
 
         if (request()->wantsJson()) {

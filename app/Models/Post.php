@@ -32,7 +32,9 @@ class Post extends Model
 
     public function likes(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'likes')->withTimestamps();
+        return $this->belongsToMany(User::class, 'likes')
+            ->withTimestamps()
+            ->orderByPivot('created_at', 'desc');
     }
 
     public function isLikedBy(User $user): bool

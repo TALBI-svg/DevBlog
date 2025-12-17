@@ -93,12 +93,21 @@
                         @if($post->likes->count() > 0)
                             <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover/like:block w-48 bg-gray-900 text-white text-xs rounded-lg py-2 px-3 z-50 shadow-xl">
                                 <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
-                                <div class="relative z-10 max-h-48 overflow-y-auto custom-scrollbar">
+                                <div class="relative z-10">
                                     <div class="font-semibold mb-1 border-b border-gray-700 pb-1 text-[10px] uppercase tracking-wider text-gray-400">Liked by</div>
-                                    @foreach($post->likes->take(10) as $user)
-                                        <div class="truncate py-0.5">{{ $user->name }}</div>
-                                    @endforeach
-                                    @if($post->likes->count() > 10)
+                                    @foreach($post->likes->take(7) as $user)
+                                         <div class="flex items-center gap-2 py-1">
+                                             <div class="h-5 w-5 rounded-full bg-gray-700 flex items-center justify-center text-white text-[9px] font-bold border border-gray-600 overflow-hidden shrink-0">
+                                                 @if($user->profile_photo_path)
+                                                     <img src="{{ asset('storage/' . $user->profile_photo_path) }}" alt="{{ $user->name }}" class="h-full w-full object-cover">
+                                                 @else
+                                                     {{ substr($user->name, 0, 1) }}
+                                                 @endif
+                                             </div>
+                                             <div class="truncate text-[11px]">{{ $user->name }}</div>
+                                         </div>
+                                     @endforeach
+                                    @if($post->likes->count() > 7)
                                         <a href="{{ route('posts.likes', $post) }}" class="block text-center text-gray-400 hover:text-white mt-1 pt-1 border-t border-gray-700 font-bold text-lg leading-none pb-1">...</a>
                                     @endif
                                 </div>
@@ -211,18 +220,40 @@
                                         <span class="text-sm font-semibold text-gray-900">{{ $comment->user ? $comment->user->name : 'User' }}</span>
                                         <span class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
                                     </div>
-                                    <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">{{ $comment->content }}</p>
                                     
+                                    <div id="comment-display-{{ $comment->id }}">
+                                        <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">{{ $comment->content }}</p>
+                                    </div>
+
                                     @auth
-                                    <form action="{{ route('comments.destroy', $comment) }}" method="POST" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delete-comment-form">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-white" title="Delete comment">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                            </svg>
-                                        </button>
-                                    </form>
+                                    @if(auth()->id() === $comment->user_id)
+                                        <form id="edit-comment-form-{{ $comment->id }}" action="{{ route('comments.update', $comment) }}" method="POST" class="hidden mt-2 edit-comment-form">
+                                            @csrf
+                                            @method('PUT')
+                                            <textarea name="content" rows="3" class="shadow-sm block w-full focus:ring-primary-500 focus:border-primary-500 text-sm border-gray-300 rounded-md mb-2" required>{{ $comment->content }}</textarea>
+                                            <div class="flex justify-end space-x-2">
+                                                <button type="button" onclick="toggleEditComment({{ $comment->id }})" class="text-xs text-gray-500 hover:text-gray-700 font-medium">Cancel</button>
+                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">Save</button>
+                                            </div>
+                                        </form>
+
+                                        <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-2">
+                                            <button onclick="toggleEditComment({{ $comment->id }})" class="text-gray-400 hover:text-primary-600 transition-colors p-1 rounded-full hover:bg-white" title="Edit comment">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                            </button>
+                                            <form action="{{ route('comments.destroy', $comment) }}" method="POST" class="delete-comment-form inline-block">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-white" title="Delete comment">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @endif
                                     @endauth
                                 </div>
                             </div>
@@ -301,17 +332,37 @@
                                             <span class="text-sm font-semibold text-gray-900">${data.comment.user ? data.comment.user.name : 'User'}</span>
                                             <span class="text-xs text-gray-500">Just now</span>
                                         </div>
-                                        <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">${data.comment.content}</p>
                                         
-                                        <form action="/comments/${data.comment.id}" method="POST" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delete-comment-form">
+                                        <div id="comment-display-${data.comment.id}">
+                                            <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">${data.comment.content}</p>
+                                        </div>
+
+                                        <form id="edit-comment-form-${data.comment.id}" action="/comments/${data.comment.id}" method="POST" class="hidden mt-2 edit-comment-form">
                                             <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
-                                            <input type="hidden" name="_method" value="DELETE">
-                                            <button type="submit" class="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-white" title="Delete comment">
+                                            <input type="hidden" name="_method" value="PUT">
+                                            <textarea name="content" rows="3" class="shadow-sm block w-full focus:ring-primary-500 focus:border-primary-500 text-sm border-gray-300 rounded-md mb-2" required>${data.comment.content}</textarea>
+                                            <div class="flex justify-end space-x-2">
+                                                <button type="button" onclick="toggleEditComment(${data.comment.id})" class="text-xs text-gray-500 hover:text-gray-700 font-medium">Cancel</button>
+                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">Save</button>
+                                            </div>
+                                        </form>
+
+                                        <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-2">
+                                            <button onclick="toggleEditComment(${data.comment.id})" class="text-gray-400 hover:text-primary-600 transition-colors p-1 rounded-full hover:bg-white" title="Edit comment">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                 </svg>
                                             </button>
-                                        </form>
+                                            <form action="/comments/${data.comment.id}" method="POST" class="delete-comment-form inline-block">
+                                                <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
+                                                <input type="hidden" name="_method" value="DELETE">
+                                                <button type="submit" class="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-white" title="Delete comment">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
