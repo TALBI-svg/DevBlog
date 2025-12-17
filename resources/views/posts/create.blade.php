@@ -43,6 +43,21 @@
                     </div>
 
                     <div>
+                        <label for="category_id" class="block text-xs font-semibold text-gray-700 mb-1 sm:mb-2">Category</label>
+                        <select name="category_id" id="category_id" 
+                            class="block w-full rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 focus:outline-none text-xs sm:text-sm p-2 sm:p-3 transition-shadow duration-200 focus:shadow-md @error('category_id') border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500 @enderror" 
+                            required>
+                            <option value="">Select a Category</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('category_id')
+                            <p class="mt-1 sm:mt-2 text-xs sm:text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
                         <label for="image" class="block text-xs font-semibold text-gray-700 mb-1 sm:mb-2">Cover Image (Optional)</label>
                         <input type="file" name="image" id="image" class="block w-full text-xs sm:text-sm text-gray-500 file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-3 sm:file:px-4 file:rounded-full file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 transition-colors">
                         @error('image')

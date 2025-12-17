@@ -6,12 +6,26 @@ use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Storage;
 
+use App\Models\User;
+
 class ProfileController extends Controller
 {
-    public function show()
+    public function show(User $user)
     {
+        $posts = $user->posts()
+            ->with(['category', 'user', 'likes'])
+            ->latest()
+            ->get();
+            
+        $likedPosts = $user->likedPosts()
+            ->with(['category', 'user', 'likes'])
+            ->latest('pivot_created_at')
+            ->get();
+
         return view('profile.show', [
-            'user' => auth()->user()
+            'user' => $user,
+            'posts' => $posts,
+            'likedPosts' => $likedPosts
         ]);
     }
 

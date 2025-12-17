@@ -25,9 +25,8 @@ Route::get('/hello/{name}', function ($name) {
     return view('hello', ['name' => $name]);
 });
 
-Route::get('/profile/{id}', function ($id) {
-    return "Profil utilisateur ID : " . $id;
-})->name('user.profile');
+// Public Profile Route
+Route::get('/users/{user}', [ProfileController::class, 'show'])->name('users.show');
 
 Route::get('/user/profile', [UserController::class, 'index']);
 
@@ -36,13 +35,16 @@ Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
 
 // Protected Post Routes
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile', function () {
+        return redirect()->route('users.show', auth()->user());
+    })->name('profile.show');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/posts/create', [PostController::class, 'create'])->name('posts.create');
     Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
     Route::get('/posts/{post}/edit', [PostController::class, 'edit'])->name('posts.edit');
     Route::put('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
+    Route::post('/posts/{post}/like', [PostController::class, 'toggleLike'])->name('posts.like');
     
     // Comment Routes
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
@@ -50,4 +52,5 @@ Route::middleware('auth')->group(function () {
 });
 
 // Public Post Show Route (Must be after specific routes)
+Route::get('/posts/{post}/likes', [PostController::class, 'likes'])->name('posts.likes');
 Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');

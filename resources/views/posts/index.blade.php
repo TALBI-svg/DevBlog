@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div x-data="postManager()">
+<div x-data="postManager()" @open-edit-modal.window="loadAndOpenEditModal($event.detail.id)">
     <!-- Hero Section -->
     <div class="text-center py-8 sm:py-16 lg:py-20 bg-gradient-to-br from-primary-50 to-white rounded-3xl mb-6 sm:mb-12 shadow-sm border border-primary-100/50">
         <h1 class="text-xl sm:text-5xl font-extrabold text-gray-900 mb-3 sm:mb-6 tracking-tight">
@@ -307,84 +307,41 @@
                         text: 'Something went wrong. Please try again.'
                     });
                 }
+            },
+
+            async loadAndOpenEditModal(id) {
+                try {
+                    const response = await fetch(`/posts/${id}/edit`, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.post) {
+                        document.getElementById('edit_post_id').value = data.post.id;
+                        document.getElementById('edit_post_url').value = data.update_url;
+                        document.getElementById('edit_title').value = data.post.title;
+                        document.getElementById('edit_category_id').value = data.post.category_id;
+                        document.getElementById('edit_content').value = data.post.content;
+                        
+                        const imgContainer = document.getElementById('edit_current_image');
+                        if (data.image_url) {
+                            imgContainer.querySelector('img').src = data.image_url;
+                            imgContainer.classList.remove('hidden');
+                        } else {
+                            imgContainer.classList.add('hidden');
+                        }
+                        
+                        this.showEditModal = true;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
             }
         }
     }
-
-    // Global functions to be called from the post card (outside Alpine scope)
-    window.editPost = async function(id) {
-        try {
-            const response = await fetch(`/posts/${id}/edit`, {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-            
-            const data = await response.json();
-            
-            if (data.post) {
-                document.getElementById('edit_post_id').value = data.post.id;
-                document.getElementById('edit_post_url').value = data.update_url;
-                document.getElementById('edit_title').value = data.post.title;
-                document.getElementById('edit_content').value = data.post.content;
-                
-                const imgContainer = document.getElementById('edit_current_image');
-                if (data.image_url) {
-                    imgContainer.querySelector('img').src = data.image_url;
-                    imgContainer.classList.remove('hidden');
-                } else {
-                    imgContainer.classList.add('hidden');
-                }
-                
-                // Access Alpine component to show modal
-                const alpineComponent = document.querySelector('[x-data="postManager()"]').__x.$data;
-                alpineComponent.showEditModal = true;
-            }
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    };
-
-    window.deletePost = function(id) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                fetch(`/posts/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        document.getElementById('post-' + id).remove();
-                        Swal.fire(
-                            'Deleted!',
-                            data.message,
-                            'success'
-                        );
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    Swal.fire(
-                        'Error!',
-                        'Something went wrong.',
-                        'error'
-                    );
-                });
-            }
-        });
-    };
 </script>
 @endsection

@@ -48,6 +48,21 @@
                     </div>
 
                     <div>
+                        <label for="category_id" class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                        <select name="category_id" id="category_id" 
+                            class="block w-full rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 sm:text-sm p-3 transition-shadow duration-200 focus:shadow-md @error('category_id') border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500 @enderror" 
+                            required>
+                            <option value="">Select a Category</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}" {{ old('category_id', $post->category_id) == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('category_id')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
                         <label for="image" class="block text-sm font-semibold text-gray-700 mb-2">Cover Image (Optional)</label>
                         @if($post->image_path)
                             <div class="mb-4">

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
-    <title>Laravel Blog</title>
+    <title>Dev Blog</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -36,6 +36,102 @@
                 }
             }
         }
+
+        // Global Post Functions
+        window.editPost = function(id) {
+            // Dispatch event for Alpine to catch if on index page
+            const event = new CustomEvent('open-edit-modal', { detail: { id: id } });
+            window.dispatchEvent(event);
+            
+            // If the edit modal form doesn't exist, fallback to standard navigation
+            if (!document.getElementById('edit-post-form')) {
+                window.location.href = `/posts/${id}/edit`;
+            }
+        };
+
+        window.deletePost = function(id) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/posts/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const el = document.getElementById('post-' + id);
+                            if (el) el.remove();
+                            
+                            Swal.fire(
+                                'Deleted!',
+                                data.message,
+                                'success'
+                            );
+                            
+                            // If we are on the show page and deleted the main post (unlikely via this function as it's for cards), redirect
+                            if (data.redirect && window.location.pathname.includes('/posts/' + id)) {
+                                window.location.href = data.redirect;
+                            }
+                        } else {
+                            Swal.fire('Error!', data.message || 'Something went wrong.', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire('Error!', 'Something went wrong.', 'error');
+                    });
+                }
+            });
+        };
+
+        window.toggleLike = function(postId) {
+            fetch(`/posts/${postId}/like`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = "{{ route('login') }}";
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    const btn = document.getElementById(`like-btn-${postId}`);
+                    if (btn) {
+                        const countSpan = document.getElementById(`like-count-${postId}`);
+                        const svg = btn.querySelector('svg');
+                        
+                        if (countSpan) countSpan.textContent = data.count;
+                        
+                        if (svg) {
+                            if (data.liked) {
+                                svg.classList.add('text-red-500', 'fill-current');
+                            } else {
+                                svg.classList.remove('text-red-500', 'fill-current');
+                            }
+                        }
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        };
     </script>
     <style>
         [x-cloak] { display: none !important; }
