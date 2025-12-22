@@ -13,25 +13,30 @@ class CommentController extends Controller
     {
         $validated = $request->validate([
             'content' => 'required|string',
+            'parent_id' => 'nullable|exists:comments,id',
         ]);
 
         $comment = $post->comments()->create([
             'content' => $validated['content'],
             'user_id' => auth()->id(),
+            'parent_id' => $validated['parent_id'] ?? null,
         ]);
 
         if ($request->wantsJson()) {
             $comment->load('user');
             
-            // Add profile photo URL to response
-            $comment->user->profile_photo_url = $comment->user->profile_photo_path 
-                ? asset('storage/' . $comment->user->profile_photo_path) 
-                : null;
+            // Render the comment HTML
+            $html = view('posts.partials.comment', [
+                'comment' => $comment,
+                'post' => $post,
+                'grouped_comments' => collect() // New comment has no replies yet
+            ])->render();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Comment added successfully',
-                'comment' => $comment
+                'comment' => $comment,
+                'html' => $html
             ]);
         }
 

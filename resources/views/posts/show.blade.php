@@ -14,7 +14,7 @@
         <!-- Post Content -->
         <article class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8 sm:mb-12">
             @if($post->image_path)
-                <div class="w-full h-48 sm:h-96 overflow-hidden">
+                <div id="post-image-container" class="w-full h-48 sm:h-96 overflow-hidden">
                     <img src="{{ asset('storage/' . $post->image_path) }}" alt="{{ $post->title }}" class="w-full h-full object-cover">
                 </div>
             @endif
@@ -55,20 +55,20 @@
                                 <time datetime="{{ $post->created_at }}">{{ $post->created_at->format('F d, Y') }}</time>
                                 <span class="mx-2">&bull;</span>
                                 @if($post->category)
-                                    <span class="bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full text-xs font-medium">{{ $post->category->name }}</span>
+                                    <span id="post-category" class="bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full text-xs font-medium">{{ $post->category->name }}</span>
                                 @else
-                                    <span class="bg-gray-50 text-gray-700 px-2 py-0.5 rounded-full text-xs font-medium">Uncategorized</span>
+                                    <span id="post-category" class="bg-gray-50 text-gray-700 px-2 py-0.5 rounded-full text-xs font-medium">Uncategorized</span>
                                 @endif
                             </div>
                         </div>
                     </div>
 
-                    <h1 class="text-lg sm:text-4xl font-extrabold text-gray-900 leading-tight mb-3 sm:mb-6">
+                    <h1 id="post-title" class="text-lg sm:text-4xl font-extrabold text-gray-900 leading-tight mb-3 sm:mb-6">
                         {{ $post->title }}
                     </h1>
                 </header>
 
-                <div class="prose prose-sm sm:prose-lg prose-indigo max-w-none text-gray-600 leading-relaxed">
+                <div id="post-content" class="prose prose-sm sm:prose-lg prose-indigo max-w-none text-gray-600 leading-relaxed">
                     {!! nl2br(e($post->content)) !!}
                 </div>
             </div>
@@ -116,28 +116,31 @@
                     </div>
                 </div>
                 
-                @auth
-                @if(auth()->id() === $post->user_id)
                 <div class="flex space-x-2 sm:space-x-3 w-full sm:w-auto justify-end mt-3 sm:mt-0">
-                    <a href="{{ route('posts.edit', $post) }}" class="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                    <button type="button" onclick="shareComment('{{ route('posts.show', $post) }}')" class="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                        <svg class="-ml-1 mr-2 h-3 w-3 sm:h-4 sm:w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                        </svg>
+                        Share
+                    </button>
+
+                    @auth
+                    @if(auth()->id() === $post->user_id)
+                    <button type="button" onclick="editPost({{ $post->id }})" class="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                         <svg class="-ml-1 mr-2 h-3 w-3 sm:h-4 sm:w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
                         Edit
-                    </a>
-                    <form id="delete-post-form" action="{{ route('posts.destroy', $post) }}" method="POST">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 border border-transparent shadow-sm text-xs sm:text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
-                            <svg class="-ml-1 mr-2 h-3 w-3 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                            </svg>
-                            Delete
-                        </button>
-                    </form>
+                    </button>
+                    <button type="button" onclick="deletePost({{ $post->id }})" class="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 border border-transparent shadow-sm text-xs sm:text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                        <svg class="-ml-1 mr-2 h-3 w-3 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Delete
+                    </button>
+                    @endif
+                    @endauth
                 </div>
-                @endif
-                @endauth
             </div>
         </article>
 
@@ -203,61 +206,14 @@
                 </div>
 
                 <div id="comments-list" class="space-y-8">
-                    @forelse ($post->comments as $comment)
-                        <div class="flex space-x-3 sm:space-x-4 group" id="comment-{{ $comment->id }}">
-                            <div class="flex-shrink-0">
-                                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden">
-                                    @if($comment->user && $comment->user->profile_photo_path)
-                                        <img src="{{ asset('storage/' . $comment->user->profile_photo_path) }}" alt="{{ $comment->user->name }}" class="h-full w-full object-cover">
-                                    @else
-                                        {{ strtoupper(substr($comment->user ? $comment->user->name : 'User', 0, 1)) }}
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="flex-grow">
-                                <div class="bg-gray-50 rounded-2xl rounded-tl-none px-4 py-3 sm:px-6 sm:py-4 relative group-hover:bg-gray-100 transition-colors duration-200">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <span class="text-sm font-semibold text-gray-900">{{ $comment->user ? $comment->user->name : 'User' }}</span>
-                                        <span class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
-                                    </div>
-                                    
-                                    <div id="comment-display-{{ $comment->id }}">
-                                        <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">{{ $comment->content }}</p>
-                                    </div>
+                    @php
+                        $grouped_comments = $post->comments->groupBy('parent_id');
+                        $root_comments = $grouped_comments->get('');
+                        if(!$root_comments) $root_comments = $grouped_comments->get(null, collect());
+                    @endphp
 
-                                    @auth
-                                    @if(auth()->id() === $comment->user_id)
-                                        <form id="edit-comment-form-{{ $comment->id }}" action="{{ route('comments.update', $comment) }}" method="POST" class="hidden mt-2 edit-comment-form">
-                                            @csrf
-                                            @method('PUT')
-                                            <textarea name="content" rows="3" class="shadow-sm block w-full focus:ring-primary-500 focus:border-primary-500 text-sm border-gray-300 rounded-md mb-2" required>{{ $comment->content }}</textarea>
-                                            <div class="flex justify-end space-x-2">
-                                                <button type="button" onclick="toggleEditComment({{ $comment->id }})" class="text-xs text-gray-500 hover:text-gray-700 font-medium">Cancel</button>
-                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">Save</button>
-                                            </div>
-                                        </form>
-
-                                        <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-2">
-                                            <button onclick="toggleEditComment({{ $comment->id }})" class="text-gray-400 hover:text-primary-600 transition-colors p-1 rounded-full hover:bg-white" title="Edit comment">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                                </svg>
-                                            </button>
-                                            <form action="{{ route('comments.destroy', $comment) }}" method="POST" class="delete-comment-form inline-block">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-white" title="Delete comment">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                                    </svg>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    @endif
-                                    @endauth
-                                </div>
-                            </div>
-                        </div>
+                    @forelse ($root_comments as $comment)
+                        @include('posts.partials.comment', ['comment' => $comment, 'post' => $post, 'grouped_comments' => $grouped_comments])
                     @empty
                         <div id="no-comments-message" class="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
                             <p class="text-gray-500 italic">No comments yet. Be the first to share your thoughts!</p>
@@ -316,59 +272,15 @@
                         const countSpan = document.getElementById('comments-count');
                         if(countSpan) countSpan.textContent = parseInt(countSpan.textContent) + 1;
 
-                        const commentHtml = `
-                            <div class="flex space-x-3 sm:space-x-4 group" id="comment-${data.comment.id}">
-                                <div class="flex-shrink-0">
-                                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden">
-                                        ${data.comment.user && data.comment.user.profile_photo_url ? 
-                                            `<img src="${data.comment.user.profile_photo_url}" alt="${data.comment.user.name}" class="h-full w-full object-cover">` :
-                                            (data.comment.user ? data.comment.user.name : 'User').charAt(0).toUpperCase()
-                                        }
-                                    </div>
-                                </div>
-                                <div class="flex-grow">
-                                    <div class="bg-gray-50 rounded-2xl rounded-tl-none px-4 py-3 sm:px-6 sm:py-4 relative group-hover:bg-gray-100 transition-colors duration-200">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="text-sm font-semibold text-gray-900">${data.comment.user ? data.comment.user.name : 'User'}</span>
-                                            <span class="text-xs text-gray-500">Just now</span>
-                                        </div>
-                                        
-                                        <div id="comment-display-${data.comment.id}">
-                                            <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">${data.comment.content}</p>
-                                        </div>
-
-                                        <form id="edit-comment-form-${data.comment.id}" action="/comments/${data.comment.id}" method="POST" class="hidden mt-2 edit-comment-form">
-                                            <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
-                                            <input type="hidden" name="_method" value="PUT">
-                                            <textarea name="content" rows="3" class="shadow-sm block w-full focus:ring-primary-500 focus:border-primary-500 text-sm border-gray-300 rounded-md mb-2" required>${data.comment.content}</textarea>
-                                            <div class="flex justify-end space-x-2">
-                                                <button type="button" onclick="toggleEditComment(${data.comment.id})" class="text-xs text-gray-500 hover:text-gray-700 font-medium">Cancel</button>
-                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">Save</button>
-                                            </div>
-                                        </form>
-
-                                        <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-2">
-                                            <button onclick="toggleEditComment(${data.comment.id})" class="text-gray-400 hover:text-primary-600 transition-colors p-1 rounded-full hover:bg-white" title="Edit comment">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                                </svg>
-                                            </button>
-                                            <form action="/comments/${data.comment.id}" method="POST" class="delete-comment-form inline-block">
-                                                <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
-                                                <input type="hidden" name="_method" value="DELETE">
-                                                <button type="submit" class="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-white" title="Delete comment">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                                    </svg>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
+                        commentsList.insertAdjacentHTML('afterbegin', data.html);
                         
-                        commentsList.insertAdjacentHTML('afterbegin', commentHtml);
+                        // Initialize Alpine for the new dropdown
+                        if (typeof Alpine !== 'undefined') {
+                            setTimeout(() => {
+                                const newComment = document.getElementById(`comment-${data.comment.id}`);
+                                if (newComment) Alpine.initTree(newComment);
+                            }, 50);
+                        }
                         
                         // Reset form
                         this.reset();
@@ -386,6 +298,174 @@
                         }
                     }
                 })
+                .catch(error => console.error('Error:', error));
+            });
+        }
+
+        // Delegated Event Listeners for Dynamic Comments
+        document.body.addEventListener('submit', function(e) {
+            // Handle Edit Comment
+            if (e.target.matches('.edit-comment-form')) {
+                e.preventDefault();
+                const form = e.target;
+                const formData = new FormData(form);
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Saving...';
+
+                fetch(form.action, {
+                    method: 'POST', // Method spoofing is handled by _method field
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const commentId = form.getAttribute('id').replace('edit-comment-form-', '');
+                        const displayEl = document.getElementById(`comment-display-${commentId}`);
+                        
+                        // Update content
+                        if (displayEl) {
+                            displayEl.querySelector('p').textContent = data.comment.content;
+                        }
+                        
+                        // Close edit mode
+                        toggleEditComment(commentId);
+                        
+                        Swal.fire({
+                            toast: true,
+                            position: 'bottom-end',
+                            icon: 'success',
+                            title: 'Comment updated',
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
+                    }
+                })
+                .catch(error => console.error('Error:', error))
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+            }
+
+            // Handle Delete Comment
+            if (e.target.matches('.delete-comment-form')) {
+                e.preventDefault();
+                const form = e.target;
+                
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: new FormData(form)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Find the comment element and remove it
+                                const commentEl = form.closest('.group'); // .group is the main container in comment.blade.php
+                                if (commentEl) {
+                                    commentEl.remove();
+                                    
+                                    // Update global count
+                                    const countSpan = document.getElementById('comments-count');
+                                    if(countSpan) countSpan.textContent = Math.max(0, parseInt(countSpan.textContent) - 1);
+                                }
+                                
+                                Swal.fire(
+                                    'Deleted!',
+                                    'Your comment has been deleted.',
+                                    'success'
+                                );
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
+                    }
+                });
+            }
+
+            // Handle Reply Comment
+            if (e.target.id && e.target.id.startsWith('reply-form-')) {
+                e.preventDefault();
+                const form = e.target;
+                const formData = new FormData(form);
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Posting...';
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const parentId = form.querySelector('input[name="parent_id"]').value;
+                        const parentCommentContainer = document.getElementById(`comment-${parentId}`).querySelector('.flex-grow');
+                        
+                        // Find or create replies container
+                        let repliesContainer = parentCommentContainer.querySelector('.border-l-2');
+                        if (!repliesContainer) {
+                            repliesContainer = document.createElement('div');
+                            repliesContainer.className = 'mt-4 pl-4 border-l-2 border-gray-100';
+                            parentCommentContainer.appendChild(repliesContainer);
+                        }
+                        
+                        // Append new reply
+                        repliesContainer.insertAdjacentHTML('beforeend', data.html);
+                        
+                        // Update count
+                        const countSpan = document.getElementById('comments-count');
+                        if(countSpan) countSpan.textContent = parseInt(countSpan.textContent) + 1;
+
+                        // Reset and hide form
+                        form.reset();
+                        toggleReplyForm(parentId);
+                        
+                        Swal.fire({
+                            toast: true,
+                            position: 'bottom-end',
+                            icon: 'success',
+                            title: 'Reply posted',
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
+                    }
+                })
+                .catch(error => console.error('Error:', error))
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+            }
+        });
                 .catch(error => {
                     console.error('Error:', error);
                     if (typeof Swal !== 'undefined') {
@@ -400,6 +480,108 @@
                     submitButton.disabled = false;
                     submitButton.innerHTML = originalText;
                 });
+            });
+        }
+
+        // Delegated Event Listener for Replies and Edits
+        const commentsList = document.getElementById('comments-list');
+        if (commentsList) {
+            commentsList.addEventListener('submit', function(e) {
+                // Handle Reply Forms
+                if (e.target.id && e.target.id.startsWith('reply-form-')) {
+                    e.preventDefault();
+                    handleCommentAction(e.target, 'reply');
+                }
+                // Handle Edit Forms
+                else if (e.target.classList.contains('edit-comment-form')) {
+                    e.preventDefault();
+                    handleCommentAction(e.target, 'edit');
+                }
+            });
+        }
+
+        function handleCommentAction(form, type) {
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = type === 'reply' ? 'Posting...' : 'Saving...';
+
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (type === 'reply') {
+                        // Find the parent comment's container
+                        const parentCommentDiv = form.closest('.flex-grow');
+                        let repliesContainer = parentCommentDiv.querySelector('.border-l-2.border-gray-100');
+                        
+                        if (!repliesContainer) {
+                            repliesContainer = document.createElement('div');
+                            repliesContainer.className = 'mt-4 pl-4 border-l-2 border-gray-100';
+                            parentCommentDiv.appendChild(repliesContainer);
+                        }
+                        
+                        repliesContainer.insertAdjacentHTML('beforeend', data.html);
+                        
+                        // Hide reply form
+                        toggleReplyForm(data.comment.parent_id);
+                        
+                        // Update count
+                        const countSpan = document.getElementById('comments-count');
+                        if(countSpan) countSpan.textContent = parseInt(countSpan.textContent) + 1;
+                        
+                        // Alpine init for new reply
+                         if (typeof Alpine !== 'undefined') {
+                             setTimeout(() => {
+                                const newReply = document.getElementById(`comment-${data.comment.id}`);
+                                if (newReply) Alpine.initTree(newReply);
+                            }, 50);
+                        }
+
+                    } else if (type === 'edit') {
+                        const commentId = data.comment.id;
+                        const displayDiv = document.getElementById(`comment-display-${commentId}`);
+                        if (displayDiv) {
+                            displayDiv.querySelector('p').textContent = data.comment.content;
+                        }
+                        toggleEditComment(commentId);
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            toast: true,
+                            position: 'bottom-end',
+                            icon: 'success',
+                            title: data.message,
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Something went wrong!',
+                    });
+                }
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
             });
         }
 
@@ -492,91 +674,67 @@
             }
         });
 
-        // Delete Post
-        const deletePostForm = document.getElementById('delete-post-form');
-        if (deletePostForm) {
-            deletePostForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
+
+    });
+
+    function toggleEditComment(commentId) {
+        const display = document.getElementById(`comment-display-${commentId}`);
+        const form = document.getElementById(`edit-comment-form-${commentId}`);
+        
+        if (display && form) {
+            if (form.classList.contains('hidden')) {
+                form.classList.remove('hidden');
+                display.classList.add('hidden');
+                // Auto-focus textarea
+                const textarea = form.querySelector('textarea');
+                if(textarea) {
+                    textarea.focus();
+                    // Resize
+                    textarea.style.height = 'auto';
+                    textarea.style.height = textarea.scrollHeight + 'px';
+                }
+            } else {
+                form.classList.add('hidden');
+                display.classList.remove('hidden');
+            }
+        }
+    }
+
+    function toggleReplyForm(commentId) {
+        const form = document.getElementById(`reply-form-${commentId}`);
+        if (form) {
+            form.classList.toggle('hidden');
+            if (!form.classList.contains('hidden')) {
+                const textarea = form.querySelector('textarea');
+                if(textarea) textarea.focus();
+            }
+        }
+    }
+
+    function shareComment(url) {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Check out this content',
+                url: url
+            }).catch(console.error);
+        } else {
+            navigator.clipboard.writeText(url).then(() => {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
-                        title: 'Delete Post?',
-                        html: 'This action cannot be undone.<br>Please type <b>delete</b> to confirm.',
-                        input: 'text',
-                        inputAttributes: {
-                            autocapitalize: 'off',
-                            placeholder: 'Type "delete"'
-                        },
-                        showCancelButton: true,
-                        confirmButtonColor: '#ef4444',
-                        cancelButtonColor: '#3b82f6',
-                        confirmButtonText: 'Yes, delete it!',
-                        reverseButtons: true,
-                        focusCancel: true,
-                        preConfirm: (value) => {
-                            if (value !== 'delete') {
-                                Swal.showValidationMessage('You need to type "delete" to confirm!')
-                            }
-                        }
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            submitDeletePost(this);
-                        }
+                        toast: true,
+                        position: 'bottom-end',
+                        icon: 'success',
+                        title: 'Link copied to clipboard',
+                        showConfirmButton: false,
+                        timer: 2000
                     });
                 } else {
-                    if(confirm('Type "delete" to confirm.')) {
-                         submitDeletePost(this);
-                    }
+                    alert('Link copied to clipboard');
                 }
+            }).catch(() => {
+                prompt('Copy this link:', url);
             });
         }
-        
-        function submitDeletePost(form) {
-             const submitButton = form.querySelector('button[type="submit"]');
-             const originalText = submitButton.innerHTML;
-             submitButton.disabled = true;
-             submitButton.innerHTML = 'Deleting...'; 
-
-             fetch(form.action, {
-                 method: 'POST',
-                 headers: {
-                     'X-Requested-With': 'XMLHttpRequest',
-                     'Accept': 'application/json',
-                     'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value
-                 },
-                 body: new FormData(form)
-             })
-             .then(response => response.json())
-             .then(data => {
-                 if (data.success) {
-                     if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                             icon: 'success',
-                             title: 'Deleted!',
-                             text: 'Your post has been deleted.',
-                             showConfirmButton: false,
-                             timer: 1500
-                         }).then(() => {
-                             window.location.href = data.redirect || '/posts';
-                         });
-                     } else {
-                         window.location.href = data.redirect || '/posts';
-                     }
-                 }
-             })
-             .catch(error => {
-                 console.error('Error:', error);
-                 if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                         icon: 'error',
-                         title: 'Oops...',
-                         text: 'Something went wrong!',
-                     });
-                 }
-                 submitButton.disabled = false;
-                 submitButton.innerHTML = originalText;
-             });
-        }
-    });
+    }
 </script>
 @endsection

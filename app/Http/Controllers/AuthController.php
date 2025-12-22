@@ -33,6 +33,14 @@ class AuthController extends Controller
 
         // Auth::login($user); // Do not login automatically
 
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration successful! Please sign in.',
+                'redirect' => route('login')
+            ]);
+        }
+
         return redirect()->route('login')->with('success', 'Registration successful! Please sign in.');
     }
 
@@ -53,7 +61,24 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Welcome back!',
+                    'redirect' => route('posts.index')
+                ]);
+            }
+
             return redirect()->intended(route('posts.index'))->with('success', 'Welcome back!');
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'message' => 'The provided credentials do not match our records.',
+                'errors' => [
+                    'email' => ['The provided credentials do not match our records.']
+                ]
+            ], 422);
         }
 
         return back()->withErrors([
@@ -68,6 +93,14 @@ class AuthController extends Controller
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'You have been logged out.',
+                'redirect' => route('posts.index')
+            ]);
+        }
 
         return redirect()->route('posts.index')->with('success', 'You have been logged out.');
     }

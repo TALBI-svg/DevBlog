@@ -132,6 +132,28 @@
             })
             .catch(error => console.error('Error:', error));
         };
+
+        window.toggleEditComment = function(commentId) {
+            const displayEl = document.getElementById(`comment-display-${commentId}`);
+            const formEl = document.getElementById(`edit-comment-form-${commentId}`);
+            
+            if (displayEl && formEl) {
+                if (formEl.classList.contains('hidden')) {
+                    displayEl.classList.add('hidden');
+                    formEl.classList.remove('hidden');
+                } else {
+                    displayEl.classList.remove('hidden');
+                    formEl.classList.add('hidden');
+                }
+            }
+        };
+
+        window.toggleReplyForm = function(commentId) {
+            const formEl = document.getElementById(`reply-form-${commentId}`);
+            if (formEl) {
+                formEl.classList.toggle('hidden');
+            }
+        };
     </script>
     <style>
         [x-cloak] { display: none !important; }
@@ -186,7 +208,7 @@
                                     <span class="font-bold text-gray-900 truncate block">{{ Auth::user()->name }}</span>
                                 </div>
                                 <a href="{{ route('profile.show') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1" id="user-menu-item-0">Your Profile</a>
-                                <form method="POST" action="{{ route('logout') }}">
+                                <form method="POST" action="{{ route('logout') }}" class="logout-form">
                                     @csrf
                                     <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1" id="user-menu-item-2">
                                         Sign out
@@ -397,7 +419,7 @@
                     </svg>
                     Create New Post
                 </a>
-                <form method="POST" action="{{ route('logout') }}" class="block">
+                <form method="POST" action="{{ route('logout') }}" class="block logout-form">
                     @csrf
                     <button type="submit" class="w-full group flex items-center px-4 py-3 text-base font-medium rounded-xl text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200">
                         <svg class="mr-4 h-6 w-6 text-gray-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -428,6 +450,47 @@
             </p>
         </div>
     </div>
+
+    @include('posts.partials.edit-modal')
+
+    <script>
+        document.addEventListener('submit', function(e) {
+            if (e.target && e.target.classList.contains('logout-form')) {
+                e.preventDefault();
+                const form = e.target;
+                
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: new FormData(form)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Signed out',
+                                text: data.message || 'See you soon!',
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                window.location.href = data.redirect || '/';
+                            });
+                        } else {
+                            window.location.href = data.redirect || '/';
+                        }
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+    </script>
+
     @stack('scripts')
 </body>
 </html>

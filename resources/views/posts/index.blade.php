@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div x-data="postManager()" @open-edit-modal.window="loadAndOpenEditModal($event.detail.id)">
+<div x-data="postManager()">
     <!-- Hero Section -->
     <div class="text-center py-8 sm:py-16 lg:py-20 bg-gradient-to-br from-primary-50 to-white rounded-3xl mb-6 sm:mb-12 shadow-sm border border-primary-100/50">
         <h1 class="text-xl sm:text-5xl font-extrabold text-gray-900 mb-3 sm:mb-6 tracking-tight">
@@ -59,6 +59,40 @@
             // Prevent form submission on enter
             document.querySelector('form').addEventListener('submit', function(e) {
                 e.preventDefault();
+            });
+
+            // AJAX Pagination
+            postsWrapper.addEventListener('click', function(e) {
+                const link = e.target.closest('a.page-link') || e.target.closest('nav[role="navigation"] a');
+                
+                if (link) {
+                    e.preventDefault();
+                    const url = link.href;
+                    
+                    postsWrapper.style.opacity = '0.5';
+                    
+                    fetch(url, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'text/html'
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        postsWrapper.innerHTML = html;
+                        postsWrapper.style.opacity = '1';
+                        
+                        // Update browser URL without reload
+                        window.history.pushState({}, '', url);
+                        
+                        // Scroll to top of posts
+                        document.getElementById('posts-wrapper').scrollIntoView({ behavior: 'smooth' });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        postsWrapper.style.opacity = '1';
+                    });
+                }
             });
 
             searchInput.addEventListener('input', function(e) {
@@ -149,69 +183,12 @@
             </div>
         </div>
     </div>
-
-    <!-- Edit Post Modal -->
-    <div x-show="showEditModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="showEditModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showEditModal = false"></div>
-
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-            <div x-show="showEditModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-                <div class="hidden sm:block absolute top-0 right-0 pt-4 pr-4">
-                    <button type="button" @click="showEditModal = false" class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                        <span class="sr-only">Close</span>
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="sm:flex sm:items-start">
-                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Edit Post</h3>
-                        <div class="mt-4">
-                            <form id="edit-post-form" @submit.prevent="updatePost" enctype="multipart/form-data">
-                                <input type="hidden" id="edit_post_id" name="id">
-                                <input type="hidden" id="edit_post_url" name="_url">
-                                <div class="space-y-4">
-                                    <div>
-                                        <label for="edit_title" class="block text-sm font-medium text-gray-700">Title</label>
-                                        <input type="text" name="title" id="edit_title" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
-                                    </div>
-                                    <div>
-                                        <label for="edit_content" class="block text-sm font-medium text-gray-700">Content</label>
-                                        <textarea name="content" id="edit_content" rows="4" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"></textarea>
-                                    </div>
-                                    <div>
-                                        <label for="edit_image" class="block text-sm font-medium text-gray-700">Image</label>
-                                        <div id="edit_current_image" class="mb-2 hidden">
-                                            <img src="" alt="Current Image" class="h-20 w-auto rounded">
-                                        </div>
-                                        <input type="file" name="image" id="edit_image" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
-                                    </div>
-                                </div>
-                                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm">
-                                        Update Post
-                                    </button>
-                                    <button type="button" @click="showEditModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto sm:text-sm">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
     function postManager() {
         return {
             showCreateModal: false,
-            showEditModal: false,
             
             openCreateModal() {
                 this.showCreateModal = true;
@@ -258,87 +235,6 @@
                         title: 'Error',
                         text: 'Something went wrong. Please try again.'
                     });
-                }
-            },
-            
-            async updatePost(e) {
-                const form = e.target;
-                const formData = new FormData(form);
-                const url = document.getElementById('edit_post_url').value;
-                
-                // Add _method field for PUT request
-                formData.append('_method', 'PUT');
-                
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST', // Use POST with _method=PUT
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'Accept': 'application/json'
-                        },
-                        body: formData
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        this.showEditModal = false;
-                        
-                        // Update post in DOM
-                        const postId = document.getElementById('edit_post_id').value;
-                        const postElement = document.getElementById('post-' + postId);
-                        if (postElement) {
-                            postElement.outerHTML = data.html;
-                        }
-                        
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Success',
-                            text: data.message,
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Something went wrong. Please try again.'
-                    });
-                }
-            },
-
-            async loadAndOpenEditModal(id) {
-                try {
-                    const response = await fetch(`/posts/${id}/edit`, {
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.post) {
-                        document.getElementById('edit_post_id').value = data.post.id;
-                        document.getElementById('edit_post_url').value = data.update_url;
-                        document.getElementById('edit_title').value = data.post.title;
-                        document.getElementById('edit_category_id').value = data.post.category_id;
-                        document.getElementById('edit_content').value = data.post.content;
-                        
-                        const imgContainer = document.getElementById('edit_current_image');
-                        if (data.image_url) {
-                            imgContainer.querySelector('img').src = data.image_url;
-                            imgContainer.classList.remove('hidden');
-                        } else {
-                            imgContainer.classList.add('hidden');
-                        }
-                        
-                        this.showEditModal = true;
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
                 }
             }
         }

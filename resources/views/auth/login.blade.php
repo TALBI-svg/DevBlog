@@ -70,7 +70,7 @@
                 </div>
 
                 <div>
-                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                    <button type="submit" id="login-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
                         Sign in
                     </button>
                 </div>
@@ -78,4 +78,87 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.querySelector('form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = document.getElementById('login-btn');
+        const originalBtnText = submitBtn.innerText;
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Signing in...';
+        
+        // Clear previous errors
+        document.querySelectorAll('.text-red-600').forEach(el => el.remove());
+        document.querySelectorAll('.border-red-300').forEach(el => el.classList.remove('border-red-300', 'text-red-900', 'placeholder-red-300', 'focus:ring-red-500', 'focus:border-red-500'));
+        
+        const formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: formData
+        })
+        .then(response => response.json().then(data => ({ status: response.status, body: data })))
+        .then(({ status, body }) => {
+            if (status >= 200 && status < 300) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: body.message || 'Login successful!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        window.location.href = body.redirect || "{{ route('posts.index') }}";
+                    });
+                } else {
+                    window.location.href = body.redirect || "{{ route('posts.index') }}";
+                }
+            } else {
+                // Handle validation errors
+                if (status === 422 && body.errors) {
+                    Object.keys(body.errors).forEach(key => {
+                        const input = document.getElementById(key);
+                        if (input) {
+                            input.classList.add('border-red-300', 'text-red-900', 'placeholder-red-300', 'focus:ring-red-500', 'focus:border-red-500');
+                            const errorMsg = document.createElement('p');
+                            errorMsg.className = 'mt-2 text-sm text-red-600';
+                            errorMsg.textContent = body.errors[key][0];
+                            input.parentElement.parentElement.appendChild(errorMsg);
+                        }
+                    });
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Login Failed',
+                            text: body.message || 'Invalid credentials.',
+                        });
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Something went wrong. Please try again.',
+                });
+            }
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalBtnText;
+        });
+    });
+</script>
 @endsection

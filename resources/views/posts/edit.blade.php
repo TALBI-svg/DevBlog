@@ -105,4 +105,92 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = 'Updating...';
+    
+            const formData = new FormData(form);
+            
+            // Remove previous errors
+            document.querySelectorAll('.text-red-600').forEach(el => el.remove());
+            document.querySelectorAll('.border-red-300').forEach(el => el.classList.remove('border-red-300', 'text-red-900', 'placeholder-red-300', 'focus:ring-red-500', 'focus:border-red-500'));
+    
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: data.message || 'Post updated successfully.',
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            window.location.href = "{{ route('posts.show', $post) }}";
+                        });
+                    } else {
+                        window.location.href = "{{ route('posts.show', $post) }}";
+                    }
+                } else {
+                    // Handle validation errors or other failures
+                     if (data.errors) {
+                        Object.keys(data.errors).forEach(key => {
+                            const input = document.getElementById(key);
+                            if (input) {
+                                input.classList.add('border-red-300', 'text-red-900', 'placeholder-red-300', 'focus:ring-red-500', 'focus:border-red-500');
+                                const errorMsg = document.createElement('p');
+                                errorMsg.className = 'mt-2 text-sm text-red-600';
+                                errorMsg.textContent = data.errors[key][0];
+                                input.parentElement.parentElement.appendChild(errorMsg);
+                            }
+                        });
+                         if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Validation Error',
+                                text: 'Please check the form for errors.',
+                            });
+                        }
+                    } else {
+                         if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message || 'Something went wrong.',
+                            });
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Something went wrong.',
+                    });
+                }
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+            });
+        });
+    </script>
 @endsection

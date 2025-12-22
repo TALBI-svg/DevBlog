@@ -165,6 +165,7 @@ class PostController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Post updated successfully',
+                'post' => $post->load('user', 'category'),
                 'html' => view('posts.partials.post-card', compact('post'))->render(),
             ]);
         }
