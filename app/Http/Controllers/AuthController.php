@@ -74,7 +74,6 @@ class AuthController extends Controller
 
         if ($request->wantsJson()) {
             return response()->json([
-                'message' => 'The provided credentials do not match our records.',
                 'errors' => [
                     'email' => ['The provided credentials do not match our records.']
                 ]
