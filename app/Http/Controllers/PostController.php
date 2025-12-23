@@ -6,6 +6,8 @@ use App\Models\Post;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Notifications\PostLiked;
+use App\Notifications\PostFavorited;
 
 class PostController extends Controller
 {
@@ -13,6 +15,28 @@ class PostController extends Controller
     public function index(Request $request)
     {
         $query = Post::with(['user', 'category', 'likes'])->latest();
+
+        // Suggested Users Logic
+        $suggestedUsers = collect();
+        if (auth()->check()) {
+            $user = auth()->user();
+            
+            // Get IDs of users the current user follows
+            $followingIds = $user->following()->pluck('users.id');
+            // Add current user's ID to the list
+            $followingIds->push($user->id);
+
+            if (!$request->filled('search') && !$request->filled('category') && !$request->filled('date_from') && !$request->filled('date_to')) {
+                // Filter posts to show only those from followed users and self
+                $query->whereIn('user_id', $followingIds);
+            }
+
+            // Get suggested users (users not followed by current user, excluding self)
+            $suggestedUsers = \App\Models\User::whereNotIn('id', $followingIds)
+                ->inRandomOrder()
+                ->take(10)
+                ->get();
+        }
 
         // Search by title or user name
         if ($request->filled('search')) {
@@ -41,7 +65,7 @@ class PostController extends Controller
         }
 
         // Show 6 posts per page and preserve query parameters
-        $posts = $query->paginate(6)->withQueryString();
+        $posts = $query->paginate(6)->onEachSide(1)->withQueryString();
         
         $categories = Category::all(); // Pass categories for filter if needed in future
 
@@ -49,7 +73,7 @@ class PostController extends Controller
             return view('posts.partials.posts-list', compact('posts'));
         }
         
-        return view('posts.index', compact('posts', 'categories'));
+        return view('posts.index', compact('posts', 'categories', 'suggestedUsers'));
     }
 
     // Show create form
@@ -165,7 +189,6 @@ class PostController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Post updated successfully',
-                'post' => $post->load('user', 'category'),
                 'html' => view('posts.partials.post-card', compact('post'))->render(),
             ]);
         }
@@ -217,6 +240,11 @@ class PostController extends Controller
         } else {
             $post->likes()->attach($user);
             $liked = true;
+            
+            // Send Notification
+            if ($post->user_id !== $user->id) {
+                $post->user->notify(new PostLiked($user, $post));
+            }
         }
 
         if (request()->wantsJson()) {
@@ -224,6 +252,41 @@ class PostController extends Controller
                 'success' => true,
                 'liked' => $liked,
                 'count' => $post->likes()->count()
+            ]);
+        }
+
+        return back();
+    }
+
+    // Show User Favorites
+    public function favorites()
+    {
+        $posts = auth()->user()->favoritePosts()->with(['user', 'category', 'likes'])->latest()->paginate(6);
+        return view('posts.favorites', compact('posts'));
+    }
+
+    // Toggle Favorite
+    public function toggleFavorite(Post $post)
+    {
+        $user = auth()->user();
+        
+        if ($post->isFavoritedBy($user)) {
+            $post->favorites()->detach($user);
+            $favorited = false;
+        } else {
+            $post->favorites()->attach($user);
+            $favorited = true;
+            
+            // Send Notification
+            if ($post->user_id !== $user->id) {
+                $post->user->notify(new PostFavorited($user, $post));
+            }
+        }
+
+        if (request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'favorited' => $favorited
             ]);
         }
 

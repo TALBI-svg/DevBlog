@@ -56,6 +56,7 @@
                         <span id="like-count-{{ $post->id }}">{{ $post->likes->count() }}</span>
                     </button>
                     
+                    @auth
                     @if($post->likes->count() > 0)
                         <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover/like:block w-48 bg-gray-900 text-white text-xs rounded-lg py-2 px-3 z-50 shadow-xl">
                             <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
@@ -79,6 +80,7 @@
                             </div>
                         </div>
                     @endif
+                    @endauth
                 </div>
                 <div class="flex items-center text-xs sm:text-sm text-gray-500">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,6 +88,12 @@
                     </svg>
                     {{ $post->comments->count() }}
                 </div>
+
+                <button onclick="toggleFavorite({{ $post->id }})" id="favorite-btn-{{ $post->id }}" class="flex items-center text-xs sm:text-sm text-gray-500 hover:text-yellow-500 transition-colors" title="Save">
+                    <svg class="w-4 h-4 mr-1 {{ auth()->check() && $post->isFavoritedBy(auth()->user()) ? 'text-yellow-500 fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                    </svg>
+                </button>
             </div>
             
             <div class="flex items-center space-x-3">

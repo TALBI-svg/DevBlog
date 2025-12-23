@@ -14,7 +14,7 @@
         <!-- Post Content -->
         <article class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8 sm:mb-12">
             @if($post->image_path)
-                <div id="post-image-container" class="w-full h-48 sm:h-96 overflow-hidden">
+                <div class="w-full h-48 sm:h-96 overflow-hidden">
                     <img src="{{ asset('storage/' . $post->image_path) }}" alt="{{ $post->title }}" class="w-full h-full object-cover">
                 </div>
             @endif
@@ -55,20 +55,20 @@
                                 <time datetime="{{ $post->created_at }}">{{ $post->created_at->format('F d, Y') }}</time>
                                 <span class="mx-2">&bull;</span>
                                 @if($post->category)
-                                    <span id="post-category" class="bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full text-xs font-medium">{{ $post->category->name }}</span>
+                                    <span class="bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full text-xs font-medium">{{ $post->category->name }}</span>
                                 @else
-                                    <span id="post-category" class="bg-gray-50 text-gray-700 px-2 py-0.5 rounded-full text-xs font-medium">Uncategorized</span>
+                                    <span class="bg-gray-50 text-gray-700 px-2 py-0.5 rounded-full text-xs font-medium">Uncategorized</span>
                                 @endif
                             </div>
                         </div>
                     </div>
 
-                    <h1 id="post-title" class="text-lg sm:text-4xl font-extrabold text-gray-900 leading-tight mb-3 sm:mb-6">
+                    <h1 class="text-lg sm:text-4xl font-extrabold text-gray-900 leading-tight mb-3 sm:mb-6">
                         {{ $post->title }}
                     </h1>
                 </header>
 
-                <div id="post-content" class="prose prose-sm sm:prose-lg prose-indigo max-w-none text-gray-600 leading-relaxed">
+                <div class="prose prose-sm sm:prose-lg prose-indigo max-w-none text-gray-600 leading-relaxed">
                     {!! nl2br(e($post->content)) !!}
                 </div>
             </div>
@@ -90,6 +90,7 @@
                             <span id="like-count-{{ $post->id }}" class="font-medium">{{ $post->likes->count() }}</span>
                         </button>
 
+                        @auth
                         @if($post->likes->count() > 0)
                             <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover/like:block w-48 bg-gray-900 text-white text-xs rounded-lg py-2 px-3 z-50 shadow-xl">
                                 <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
@@ -113,7 +114,15 @@
                                 </div>
                             </div>
                         @endif
+                        @endauth
                     </div>
+
+                    <button onclick="toggleFavorite({{ $post->id }})" id="favorite-btn-{{ $post->id }}" class="flex items-center space-x-2 text-gray-500 hover:text-yellow-500 transition-colors ml-4" title="Save">
+                        <svg class="w-6 h-6 {{ auth()->check() && $post->isFavoritedBy(auth()->user()) ? 'text-yellow-500 fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                        </svg>
+                        <span class="font-medium hidden sm:inline">Save</span>
+                    </button>
                 </div>
                 
                 <div class="flex space-x-2 sm:space-x-3 w-full sm:w-auto justify-end mt-3 sm:mt-0">
@@ -126,18 +135,22 @@
 
                     @auth
                     @if(auth()->id() === $post->user_id)
-                    <button type="button" onclick="editPost({{ $post->id }})" class="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                    <a href="{{ route('posts.edit', $post) }}" class="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                         <svg class="-ml-1 mr-2 h-3 w-3 sm:h-4 sm:w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
                         Edit
-                    </button>
-                    <button type="button" onclick="deletePost({{ $post->id }})" class="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 border border-transparent shadow-sm text-xs sm:text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
-                        <svg class="-ml-1 mr-2 h-3 w-3 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                        </svg>
-                        Delete
-                    </button>
+                    </a>
+                    <form id="delete-post-form" action="{{ route('posts.destroy', $post) }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 border border-transparent shadow-sm text-xs sm:text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                            <svg class="-ml-1 mr-2 h-3 w-3 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                            Delete
+                        </button>
+                    </form>
                     @endif
                     @endauth
                 </div>
@@ -237,12 +250,13 @@
             });
         }
 
-        // AJAX Comment Submission
-        const commentForm = document.getElementById('add-comment-form');
-        if (commentForm) {
-            commentForm.addEventListener('submit', function(e) {
+        // Add Comment
+        const addCommentForm = document.getElementById('add-comment-form');
+        if (addCommentForm) {
+            addCommentForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
+                const textarea = this.querySelector('textarea');
                 const action = this.action;
                 const submitButton = this.querySelector('button[type="submit"]');
                 const originalText = submitButton.innerHTML;
@@ -272,7 +286,9 @@
                         const countSpan = document.getElementById('comments-count');
                         if(countSpan) countSpan.textContent = parseInt(countSpan.textContent) + 1;
 
-                        commentsList.insertAdjacentHTML('afterbegin', data.html);
+                        if (data.html) {
+                            commentsList.insertAdjacentHTML('afterbegin', data.html);
+                        }
                         
                         // Initialize Alpine for the new dropdown
                         if (typeof Alpine !== 'undefined') {
@@ -298,174 +314,6 @@
                         }
                     }
                 })
-                .catch(error => console.error('Error:', error));
-            });
-        }
-
-        // Delegated Event Listeners for Dynamic Comments
-        document.body.addEventListener('submit', function(e) {
-            // Handle Edit Comment
-            if (e.target.matches('.edit-comment-form')) {
-                e.preventDefault();
-                const form = e.target;
-                const formData = new FormData(form);
-                const submitBtn = form.querySelector('button[type="submit"]');
-                const originalText = submitBtn.innerHTML;
-
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = 'Saving...';
-
-                fetch(form.action, {
-                    method: 'POST', // Method spoofing is handled by _method field
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const commentId = form.getAttribute('id').replace('edit-comment-form-', '');
-                        const displayEl = document.getElementById(`comment-display-${commentId}`);
-                        
-                        // Update content
-                        if (displayEl) {
-                            displayEl.querySelector('p').textContent = data.comment.content;
-                        }
-                        
-                        // Close edit mode
-                        toggleEditComment(commentId);
-                        
-                        Swal.fire({
-                            toast: true,
-                            position: 'bottom-end',
-                            icon: 'success',
-                            title: 'Comment updated',
-                            showConfirmButton: false,
-                            timer: 3000
-                        });
-                    }
-                })
-                .catch(error => console.error('Error:', error))
-                .finally(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                });
-            }
-
-            // Handle Delete Comment
-            if (e.target.matches('.delete-comment-form')) {
-                e.preventDefault();
-                const form = e.target;
-                
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: "You won't be able to revert this!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Yes, delete it!'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        fetch(form.action, {
-                            method: 'POST',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: new FormData(form)
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                // Find the comment element and remove it
-                                const commentEl = form.closest('.group'); // .group is the main container in comment.blade.php
-                                if (commentEl) {
-                                    commentEl.remove();
-                                    
-                                    // Update global count
-                                    const countSpan = document.getElementById('comments-count');
-                                    if(countSpan) countSpan.textContent = Math.max(0, parseInt(countSpan.textContent) - 1);
-                                }
-                                
-                                Swal.fire(
-                                    'Deleted!',
-                                    'Your comment has been deleted.',
-                                    'success'
-                                );
-                            }
-                        })
-                        .catch(error => console.error('Error:', error));
-                    }
-                });
-            }
-
-            // Handle Reply Comment
-            if (e.target.id && e.target.id.startsWith('reply-form-')) {
-                e.preventDefault();
-                const form = e.target;
-                const formData = new FormData(form);
-                const submitBtn = form.querySelector('button[type="submit"]');
-                const originalText = submitBtn.innerHTML;
-
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = 'Posting...';
-
-                fetch(form.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const parentId = form.querySelector('input[name="parent_id"]').value;
-                        const parentCommentContainer = document.getElementById(`comment-${parentId}`).querySelector('.flex-grow');
-                        
-                        // Find or create replies container
-                        let repliesContainer = parentCommentContainer.querySelector('.border-l-2');
-                        if (!repliesContainer) {
-                            repliesContainer = document.createElement('div');
-                            repliesContainer.className = 'mt-4 pl-4 border-l-2 border-gray-100';
-                            parentCommentContainer.appendChild(repliesContainer);
-                        }
-                        
-                        // Append new reply
-                        repliesContainer.insertAdjacentHTML('beforeend', data.html);
-                        
-                        // Update count
-                        const countSpan = document.getElementById('comments-count');
-                        if(countSpan) countSpan.textContent = parseInt(countSpan.textContent) + 1;
-
-                        // Reset and hide form
-                        form.reset();
-                        toggleReplyForm(parentId);
-                        
-                        Swal.fire({
-                            toast: true,
-                            position: 'bottom-end',
-                            icon: 'success',
-                            title: 'Reply posted',
-                            showConfirmButton: false,
-                            timer: 3000
-                        });
-                    }
-                })
-                .catch(error => console.error('Error:', error))
-                .finally(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                });
-            }
-        });
                 .catch(error => {
                     console.error('Error:', error);
                     if (typeof Swal !== 'undefined') {
@@ -483,107 +331,77 @@
             });
         }
 
-        // Delegated Event Listener for Replies and Edits
-        const commentsList = document.getElementById('comments-list');
-        if (commentsList) {
-            commentsList.addEventListener('submit', function(e) {
-                // Handle Reply Forms
-                if (e.target.id && e.target.id.startsWith('reply-form-')) {
-                    e.preventDefault();
-                    handleCommentAction(e.target, 'reply');
-                }
-                // Handle Edit Forms
-                else if (e.target.classList.contains('edit-comment-form')) {
-                    e.preventDefault();
-                    handleCommentAction(e.target, 'edit');
-                }
-            });
-        }
+        // Reply Comment (Delegation)
+        document.getElementById('comments-list').addEventListener('submit', function(e) {
+            if (e.target.classList.contains('reply-comment-form')) {
+                e.preventDefault();
+                const form = e.target;
+                const formData = new FormData(form);
+                const textarea = form.querySelector('textarea');
+                const submitButton = form.querySelector('button[type="submit"]');
+                const originalText = submitButton.innerHTML;
+                const parentId = formData.get('parent_id');
 
-        function handleCommentAction(form, type) {
-            const submitButton = form.querySelector('button[type="submit"]');
-            const originalText = submitButton.innerHTML;
-            submitButton.disabled = true;
-            submitButton.innerHTML = type === 'reply' ? 'Posting...' : 'Saving...';
+                submitButton.disabled = true;
+                submitButton.innerHTML = 'Replying...';
 
-            const formData = new FormData(form);
-
-            fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (type === 'reply') {
-                        // Find the parent comment's container
-                        const parentCommentDiv = form.closest('.flex-grow');
-                        let repliesContainer = parentCommentDiv.querySelector('.border-l-2.border-gray-100');
-                        
-                        if (!repliesContainer) {
-                            repliesContainer = document.createElement('div');
-                            repliesContainer.className = 'mt-4 pl-4 border-l-2 border-gray-100';
-                            parentCommentDiv.appendChild(repliesContainer);
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const repliesContainer = document.getElementById(`replies-container-${parentId}`);
+                        if (repliesContainer) {
+                            repliesContainer.classList.remove('hidden');
+                            if (data.html) {
+                                repliesContainer.insertAdjacentHTML('beforeend', data.html);
+                            }
                         }
-                        
-                        repliesContainer.insertAdjacentHTML('beforeend', data.html);
-                        
-                        // Hide reply form
-                        toggleReplyForm(data.comment.parent_id);
                         
                         // Update count
                         const countSpan = document.getElementById('comments-count');
                         if(countSpan) countSpan.textContent = parseInt(countSpan.textContent) + 1;
-                        
-                        // Alpine init for new reply
-                         if (typeof Alpine !== 'undefined') {
-                             setTimeout(() => {
-                                const newReply = document.getElementById(`comment-${data.comment.id}`);
-                                if (newReply) Alpine.initTree(newReply);
-                            }, 50);
-                        }
 
-                    } else if (type === 'edit') {
-                        const commentId = data.comment.id;
-                        const displayDiv = document.getElementById(`comment-display-${commentId}`);
-                        if (displayDiv) {
-                            displayDiv.querySelector('p').textContent = data.comment.content;
+                        // Reset and hide form
+                        form.reset();
+                        form.classList.add('hidden');
+                        if (textarea) textarea.style.height = 'auto';
+
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                toast: true,
+                                position: 'bottom-end',
+                                icon: 'success',
+                                title: 'Reply added successfully',
+                                showConfirmButton: false,
+                                timer: 3000
+                            });
                         }
-                        toggleEditComment(commentId);
                     }
-
+                })
+                .catch(error => {
+                    console.error('Error:', error);
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            toast: true,
-                            position: 'bottom-end',
-                            icon: 'success',
-                            title: data.message,
-                            showConfirmButton: false,
-                            timer: 3000
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: 'Something went wrong!',
                         });
                     }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops...',
-                        text: 'Something went wrong!',
-                    });
-                }
-            })
-            .finally(() => {
-                submitButton.disabled = false;
-                submitButton.innerHTML = originalText;
-            });
-        }
+                })
+                .finally(() => {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                });
+            }
+        });
 
         // Delete Comment (Delegation)
         document.getElementById('comments-list').addEventListener('submit', function(e) {
@@ -674,7 +492,91 @@
             }
         });
 
+        // Delete Post
+        const deletePostForm = document.getElementById('delete-post-form');
+        if (deletePostForm) {
+            deletePostForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Delete Post?',
+                        html: 'This action cannot be undone.<br>Please type <b>delete</b> to confirm.',
+                        input: 'text',
+                        inputAttributes: {
+                            autocapitalize: 'off',
+                            placeholder: 'Type "delete"'
+                        },
+                        showCancelButton: true,
+                        confirmButtonColor: '#ef4444',
+                        cancelButtonColor: '#3b82f6',
+                        confirmButtonText: 'Yes, delete it!',
+                        reverseButtons: true,
+                        focusCancel: true,
+                        preConfirm: (value) => {
+                            if (value !== 'delete') {
+                                Swal.showValidationMessage('You need to type "delete" to confirm!')
+                            }
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            submitDeletePost(this);
+                        }
+                    });
+                } else {
+                    if(confirm('Type "delete" to confirm.')) {
+                         submitDeletePost(this);
+                    }
+                }
+            });
+        }
+        
+        function submitDeletePost(form) {
+             const submitButton = form.querySelector('button[type="submit"]');
+             const originalText = submitButton.innerHTML;
+             submitButton.disabled = true;
+             submitButton.innerHTML = 'Deleting...'; 
 
+             fetch(form.action, {
+                 method: 'POST',
+                 headers: {
+                     'X-Requested-With': 'XMLHttpRequest',
+                     'Accept': 'application/json',
+                     'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value
+                 },
+                 body: new FormData(form)
+             })
+             .then(response => response.json())
+             .then(data => {
+                 if (data.success) {
+                     if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                             icon: 'success',
+                             title: 'Deleted!',
+                             text: 'Your post has been deleted.',
+                             showConfirmButton: false,
+                             timer: 1500
+                         }).then(() => {
+                             window.location.href = data.redirect || '/posts';
+                         });
+                     } else {
+                         window.location.href = data.redirect || '/posts';
+                     }
+                 }
+             })
+             .catch(error => {
+                 console.error('Error:', error);
+                 if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                         icon: 'error',
+                         title: 'Oops...',
+                         text: 'Something went wrong!',
+                     });
+                 }
+                 submitButton.disabled = false;
+                 submitButton.innerHTML = originalText;
+             });
+        }
     });
 
     function toggleEditComment(commentId) {

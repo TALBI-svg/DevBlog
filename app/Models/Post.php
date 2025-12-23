@@ -41,4 +41,15 @@ class Post extends Model
     {
         return $this->likes->contains($user);
     }
+
+    public function favorites(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'favorites')
+            ->withTimestamps();
+    }
+
+    public function isFavoritedBy(User $user): bool
+    {
+        return $this->favorites->contains($user);
+    }
 }

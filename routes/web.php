@@ -6,6 +6,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\NotificationController;
 
 Route::get('/', function () {
     return redirect()->route('posts.index');
@@ -40,16 +41,30 @@ Route::middleware('auth')->group(function () {
     })->name('profile.show');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/posts/create', [PostController::class, 'create'])->name('posts.create');
+    Route::get('/posts/favorites', [PostController::class, 'favorites'])->name('posts.favorites');
     Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
     Route::get('/posts/{post}/edit', [PostController::class, 'edit'])->name('posts.edit');
     Route::put('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
     Route::post('/posts/{post}/like', [PostController::class, 'toggleLike'])->name('posts.like');
+    Route::post('/posts/{post}/favorite', [PostController::class, 'toggleFavorite'])->name('posts.favorite');
     
     // Comment Routes
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+    
+    // Notification Routes
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+
+    // Follow Routes
+    Route::get('/profile/following', [\App\Http\Controllers\FollowController::class, 'following'])->name('users.following');
+    Route::post('/users/{user}/follow', [\App\Http\Controllers\FollowController::class, 'store'])->name('users.follow');
+    Route::delete('/users/{user}/unfollow', [\App\Http\Controllers\FollowController::class, 'destroy'])->name('users.unfollow');
+
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+    Route::get('/notifications/count', [NotificationController::class, 'getUnreadCount'])->name('notifications.count');
 });
 
 // Public Post Show Route (Must be after specific routes)

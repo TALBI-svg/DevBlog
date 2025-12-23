@@ -109,87 +109,73 @@
     <script>
         document.querySelector('form').addEventListener('submit', function(e) {
             e.preventDefault();
-            const form = e.target;
-            const submitButton = form.querySelector('button[type="submit"]');
-            const originalText = submitButton.innerHTML;
-            submitButton.disabled = true;
-            submitButton.innerHTML = 'Updating...';
-    
+            const form = this;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // Clear previous errors
+            form.querySelectorAll('.text-red-600').forEach(el => el.remove());
+            form.querySelectorAll('.border-red-300').forEach(el => el.classList.remove('border-red-300', 'text-red-900', 'placeholder-red-300', 'focus:ring-red-500', 'focus:border-red-500'));
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Updating...';
+            
             const formData = new FormData(form);
             
-            // Remove previous errors
-            document.querySelectorAll('.text-red-600').forEach(el => el.remove());
-            document.querySelectorAll('.border-red-300').forEach(el => el.classList.remove('border-red-300', 'text-red-900', 'placeholder-red-300', 'focus:ring-red-500', 'focus:border-red-500'));
-    
             fetch(form.action, {
                 method: 'POST',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 },
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => { throw data; });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Success!',
-                            text: data.message || 'Post updated successfully.',
-                            showConfirmButton: false,
-                            timer: 1500
-                        }).then(() => {
-                            window.location.href = "{{ route('posts.show', $post) }}";
-                        });
-                    } else {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: data.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
                         window.location.href = "{{ route('posts.show', $post) }}";
-                    }
-                } else {
-                    // Handle validation errors or other failures
-                     if (data.errors) {
-                        Object.keys(data.errors).forEach(key => {
-                            const input = document.getElementById(key);
-                            if (input) {
-                                input.classList.add('border-red-300', 'text-red-900', 'placeholder-red-300', 'focus:ring-red-500', 'focus:border-red-500');
-                                const errorMsg = document.createElement('p');
-                                errorMsg.className = 'mt-2 text-sm text-red-600';
-                                errorMsg.textContent = data.errors[key][0];
-                                input.parentElement.parentElement.appendChild(errorMsg);
-                            }
-                        });
-                         if (typeof Swal !== 'undefined') {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Validation Error',
-                                text: 'Please check the form for errors.',
-                            });
-                        }
-                    } else {
-                         if (typeof Swal !== 'undefined') {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: data.message || 'Something went wrong.',
-                            });
-                        }
-                    }
+                    });
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Something went wrong.',
+                let errorMsg = error.message || 'Something went wrong.';
+                
+                if (error.errors) {
+                    errorMsg = 'Please check the form for errors.';
+                    Object.keys(error.errors).forEach(field => {
+                        const input = form.querySelector(`[name="${field}"]`);
+                        if (input) {
+                            input.classList.add('border-red-300', 'text-red-900', 'placeholder-red-300', 'focus:ring-red-500', 'focus:border-red-500');
+                            
+                            const targetElement = input.parentElement.classList.contains('relative') ? input.parentElement : input;
+                            
+                            const errorDiv = document.createElement('p');
+                            errorDiv.className = 'mt-2 text-sm text-red-600';
+                            errorDiv.textContent = error.errors[field][0];
+                            targetElement.insertAdjacentElement('afterend', errorDiv);
+                        }
                     });
                 }
+                
+                Swal.fire('Error!', errorMsg, 'error');
             })
             .finally(() => {
-                submitButton.disabled = false;
-                submitButton.innerHTML = originalText;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             });
         });
     </script>

@@ -12,6 +12,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        [x-cloak] { display: none !important; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
     <script>
         tailwind.config = {
             theme: {
@@ -100,9 +105,8 @@
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
+                    'Accept': 'application/json'
+                }
             })
             .then(response => {
                 if (response.status === 401) {
@@ -112,13 +116,14 @@
                 return response.json();
             })
             .then(data => {
-                if (data && data.success) {
-                    const btn = document.getElementById(`like-btn-${postId}`);
-                    if (btn) {
-                        const countSpan = document.getElementById(`like-count-${postId}`);
+                if (data.success) {
+                    // Update all instances of this post's like button
+                    const btns = document.querySelectorAll(`.like-btn-${postId}`);
+                    btns.forEach(btn => {
+                        const countSpan = btn.querySelector('.like-count');
                         const svg = btn.querySelector('svg');
                         
-                        if (countSpan) countSpan.textContent = data.count;
+                        if (countSpan) countSpan.textContent = data.likes_count;
                         
                         if (svg) {
                             if (data.liked) {
@@ -127,39 +132,115 @@
                                 svg.classList.remove('text-red-500', 'fill-current');
                             }
                         }
-                    }
+                    });
+                }
+            });
+        };
+
+        window.toggleFollow = function(userId, isUnfollow = false) {
+            const url = isUnfollow ? `/users/${userId}/unfollow` : `/users/${userId}/follow`;
+            const method = isUnfollow ? 'DELETE' : 'POST';
+
+            return fetch(url, {
+                method: method,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 }
             })
-            .catch(error => console.error('Error:', error));
-        };
-
-        window.toggleEditComment = function(commentId) {
-            const displayEl = document.getElementById(`comment-display-${commentId}`);
-            const formEl = document.getElementById(`edit-comment-form-${commentId}`);
-            
-            if (displayEl && formEl) {
-                if (formEl.classList.contains('hidden')) {
-                    displayEl.classList.add('hidden');
-                    formEl.classList.remove('hidden');
-                } else {
-                    displayEl.classList.remove('hidden');
-                    formEl.classList.add('hidden');
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = "{{ route('login') }}";
+                    throw new Error('Unauthorized');
                 }
-            }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true
+                    });
+                    
+                    Toast.fire({
+                        icon: 'success',
+                        title: data.message
+                    });
+                    return data;
+                }
+                throw new Error(data.message);
+            });
         };
 
-        window.toggleReplyForm = function(commentId) {
-            const formEl = document.getElementById(`reply-form-${commentId}`);
-            if (formEl) {
-                formEl.classList.toggle('hidden');
-            }
+        window.toggleFavorite = function(postId) {
+            console.log('Toggling favorite for post:', postId);
+            fetch(`/posts/${postId}/favorite`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = "{{ route('login') }}";
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    const btn = document.getElementById(`favorite-btn-${postId}`);
+                    if (btn) {
+                        const svg = btn.querySelector('svg');
+                        
+                        if (svg) {
+                            if (data.favorited) {
+                                svg.classList.add('text-yellow-500', 'fill-current');
+                            } else {
+                                svg.classList.remove('text-yellow-500', 'fill-current');
+                            }
+                        }
+                    }
+                    
+                    // Optional: Show toast
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true
+                    });
+                    
+                    Toast.fire({
+                        icon: 'success',
+                        title: data.favorited ? 'Added to favorites' : 'Removed from favorites'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Something went wrong! Please try again.',
+                });
+            });
         };
     </script>
     <style>
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="h-full flex flex-col antialiased text-gray-900" x-data="{ open: false }" x-init="$watch('open', value => value ? document.body.classList.add('overflow-hidden') : document.body.classList.remove('overflow-hidden'))">
+<body class="min-h-screen flex flex-col antialiased text-gray-900" x-data="{ open: false }" x-init="$watch('open', value => value ? document.body.classList.add('overflow-hidden') : document.body.classList.remove('overflow-hidden'))">
     <!-- Navigation -->
     <nav class="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -189,6 +270,97 @@
                         Write Post
                     </a>
                     @auth
+                        <!-- Notification Bell -->
+                        <div class="ml-3 relative" x-data="{ open: false, count: {{ auth()->user()->unreadNotifications->count() }} }" @click.outside="open = false">
+                            <button @click="open = !open; if(open) { fetch('{{ route('notifications.readAll') }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } }).then(() => count = 0); }" class="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 relative">
+                                <span class="sr-only">View notifications</span>
+                                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                <span x-show="count > 0" x-text="count" x-cloak class="absolute top-0 right-0 block h-4 w-4 transform -translate-y-1/2 translate-x-1/2 rounded-full ring-2 ring-white bg-red-500 text-white text-[10px] font-bold text-center leading-4"></span>
+                            </button>
+
+                            <div x-show="open" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 overflow-hidden" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1" style="display: none;">
+                                <div class="px-4 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100 bg-gray-50">
+                                    Notifications
+                                </div>
+                                <div class="max-h-64 overflow-y-auto">
+                                    @forelse(auth()->user()->notifications()->latest()->take(5)->get() as $notification)
+                                        <a href="{{ route('posts.show', $notification->data['post_id'] ?? 0) }}" class="flex items-start px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 {{ $notification->read_at ? 'opacity-75' : '' }}">
+                                            <div class="flex-shrink-0 mr-3 relative">
+                                                <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border border-gray-200" x-data="{ imgError: false }">
+                                                    @if(isset($notification->data['user_profile_photo']) && $notification->data['user_profile_photo'])
+                                                        <img src="{{ asset('storage/' . $notification->data['user_profile_photo']) }}" 
+                                                             alt="{{ $notification->data['user_name'] ?? 'User' }}" 
+                                                             class="h-full w-full object-cover"
+                                                             x-show="!imgError"
+                                                             x-on:error="imgError = true">
+                                                        <span class="font-bold text-gray-500 text-[10px]" x-show="imgError" x-cloak>
+                                                            {{ substr($notification->data['user_name'] ?? 'U', 0, 1) }}
+                                                        </span>
+                                                    @else
+                                                        <span class="font-bold text-gray-500 text-[10px]">{{ substr($notification->data['user_name'] ?? 'U', 0, 1) }}</span>
+                                                    @endif
+                                                </div>
+                                                @php
+                                                    $type = $notification->data['type'] ?? 'info';
+                                                    $bgColor = 'bg-blue-500';
+                                                    $icon = '';
+                                                    if($type === 'like') {
+                                                        $bgColor = 'bg-red-500';
+                                                        $icon = '<svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" /></svg>';
+                                                    } elseif($type === 'favorite') {
+                                                        $bgColor = 'bg-yellow-500';
+                                                        $icon = '<svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" /></svg>';
+                                                    } elseif($type === 'follow') {
+                                                        $bgColor = 'bg-indigo-500';
+                                                        $icon = '<svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" /></svg>';
+                                                    } elseif($type === 'comment') {
+                                                        $bgColor = 'bg-blue-500';
+                                                        $icon = '<svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" /></svg>';
+                                                    } else {
+                                                        $bgColor = 'bg-gray-500';
+                                                        $icon = '<svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>';
+                                                    }
+                                                @endphp
+                                                <div class="absolute -bottom-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center border border-white {{ $bgColor }}">
+                                                    {!! $icon !!}
+                                                </div>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 line-clamp-2">
+                                                    <span class="font-bold text-primary-600">{{ $notification->data['user_name'] ?? 'User' }}</span>
+                                                    @if(isset($notification->data['type']))
+                                                        @if($notification->data['type'] === 'like')
+                                                            liked your post.
+                                                        @elseif($notification->data['type'] === 'comment')
+                                                            commented on your post.
+                                                        @elseif($notification->data['type'] === 'favorite')
+                                                            saved your post as favorite.
+                                                        @elseif($notification->data['type'] === 'follow')
+                                                            started following you.
+                                                        @else
+                                                            {{ str_replace($notification->data['user_name'] ?? '', '', $notification->data['message'] ?? '') }}
+                                                        @endif
+                                                    @else
+                                                        {{ $notification->data['message'] ?? 'New notification' }}
+                                                    @endif
+                                                </p>
+                                                <p class="text-xs text-gray-500 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                                            </div>
+                                        </a>
+                                    @empty
+                                        <div class="px-4 py-6 text-center text-sm text-gray-500">
+                                            No notifications
+                                        </div>
+                                    @endforelse
+                                </div>
+                                <a href="{{ route('notifications.index') }}" class="block px-4 py-2 text-xs text-center text-primary-600 hover:text-primary-700 font-medium bg-gray-50 hover:bg-gray-100 transition-colors">
+                                    View all notifications
+                                </a>
+                            </div>
+                        </div>
+
                         <div class="ml-3 relative" x-data="{ open: false }">
                             <div>
                                 <button @click="open = !open" type="button" class="bg-white rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
@@ -208,7 +380,9 @@
                                     <span class="font-bold text-gray-900 truncate block">{{ Auth::user()->name }}</span>
                                 </div>
                                 <a href="{{ route('profile.show') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1" id="user-menu-item-0">Your Profile</a>
-                                <form method="POST" action="{{ route('logout') }}" class="logout-form">
+                                <a href="{{ route('users.following') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">Following</a>
+                                <a href="{{ route('posts.favorites') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">My Favorites</a>
+                                <form method="POST" action="{{ route('logout') }}">
                                     @csrf
                                     <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1" id="user-menu-item-2">
                                         Sign out
@@ -239,7 +413,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-grow">
+    <main class="flex-1">
         <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             @if(session('success'))
                 <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed bottom-4 right-4 z-50 rounded-lg bg-green-50 p-4 shadow-lg border-l-4 border-green-400 flex items-center max-w-sm">
@@ -413,13 +587,19 @@
             </a>
             
             @auth
+                <a href="{{ route('posts.favorites') }}" class="group flex items-center px-4 py-3 text-base font-medium rounded-xl {{ request()->routeIs('posts.favorites') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50' }} transition-all duration-200">
+                    <svg class="mr-4 h-6 w-6 {{ request()->routeIs('posts.favorites') ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-500' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                    </svg>
+                    My Favorites
+                </a>
                 <a href="{{ route('posts.create') }}" class="group flex items-center px-4 py-3 text-base font-medium rounded-xl {{ request()->routeIs('posts.create') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50' }} transition-all duration-200">
                     <svg class="mr-4 h-6 w-6 {{ request()->routeIs('posts.create') ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-500' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
                     Create New Post
                 </a>
-                <form method="POST" action="{{ route('logout') }}" class="block logout-form">
+                <form method="POST" action="{{ route('logout') }}" class="block">
                     @csrf
                     <button type="submit" class="w-full group flex items-center px-4 py-3 text-base font-medium rounded-xl text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200">
                         <svg class="mr-4 h-6 w-6 text-gray-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -450,47 +630,48 @@
             </p>
         </div>
     </div>
-
-    @include('posts.partials.edit-modal')
-
+    @stack('scripts')
     <script>
-        document.addEventListener('submit', function(e) {
-            if (e.target && e.target.classList.contains('logout-form')) {
-                e.preventDefault();
-                const form = e.target;
-                
-                fetch(form.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: new FormData(form)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        if (typeof Swal !== 'undefined') {
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutForms = document.querySelectorAll('form[action$="/logout"]');
+            logoutForms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Signed out',
-                                text: data.message || 'See you soon!',
+                                title: 'Logged Out',
+                                text: data.message,
                                 showConfirmButton: false,
                                 timer: 1500
                             }).then(() => {
                                 window.location.href = data.redirect || '/';
                             });
                         } else {
-                            window.location.href = data.redirect || '/';
+                             // Fallback
+                             window.location.href = '/';
                         }
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        // Fallback to standard submission if AJAX fails
+                        // form.submit(); // careful of infinite loop if preventDefault wasn't enough or if we re-trigger
+                        window.location.href = '/';
+                    });
+                });
+            });
         });
     </script>
-
-    @stack('scripts')
 </body>
 </html>

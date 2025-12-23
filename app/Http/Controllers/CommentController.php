@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Comment;
 use App\Models\Post;
 use Illuminate\Http\Request;
+use App\Notifications\PostCommented;
 
 class CommentController extends Controller
 {
@@ -22,21 +23,28 @@ class CommentController extends Controller
             'parent_id' => $validated['parent_id'] ?? null,
         ]);
 
+        // Send Notification
+        if ($post->user_id !== auth()->id()) {
+            $post->user->notify(new PostCommented(auth()->user(), $post));
+        }
+
         if ($request->wantsJson()) {
             $comment->load('user');
             
-            // Render the comment HTML
-            $html = view('posts.partials.comment', [
-                'comment' => $comment,
-                'post' => $post,
-                'grouped_comments' => collect() // New comment has no replies yet
-            ])->render();
+            // Add profile photo URL to response
+            $comment->user->profile_photo_url = $comment->user->profile_photo_path 
+                ? asset('storage/' . $comment->user->profile_photo_path) 
+                : null;
 
             return response()->json([
                 'success' => true,
                 'message' => 'Comment added successfully',
                 'comment' => $comment,
-                'html' => $html
+                'html' => view('posts.partials.comment', [
+                    'comment' => $comment, 
+                    'post' => $post, 
+                    'grouped_comments' => collect()
+                ])->render()
             ]);
         }
 
