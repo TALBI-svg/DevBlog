@@ -248,10 +248,17 @@ class PostController extends Controller
         }
 
         if (request()->wantsJson()) {
+            // Refresh likes relationship to get latest data
+            $post->load('likes');
+            
             return response()->json([
                 'success' => true,
                 'liked' => $liked,
-                'count' => $post->likes()->count()
+                'count' => $post->likes->count(),
+                'likes_html' => view('posts.partials.likes-dropdown', [
+                    'post' => $post,
+                    'likes' => $post->likes
+                ])->render()
             ]);
         }
 

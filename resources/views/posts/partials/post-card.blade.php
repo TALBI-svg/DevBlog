@@ -48,38 +48,37 @@
         
         <div class="pt-6 border-t border-gray-100 flex items-center justify-between mt-auto">
             <div class="flex items-center space-x-4">
-                <div class="relative group/like">
-                    <button onclick="toggleLike({{ $post->id }})" id="like-btn-{{ $post->id }}" class="flex items-center text-xs sm:text-sm text-gray-500 hover:text-red-500 transition-colors">
-                        <svg class="w-4 h-4 mr-1 {{ auth()->check() && $post->isLikedBy(auth()->user()) ? 'text-red-500 fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                        </svg>
-                        <span id="like-count-{{ $post->id }}">{{ $post->likes->count() }}</span>
-                    </button>
+                <div class="relative like-btn-{{ $post->id }} group/like" 
+                     x-data="{ showLikes: false, timeout: null, count: {{ $post->likes->count() }} }"
+                     @likes-updated.window="if ($event.detail.id === {{ $post->id }}) count = $event.detail.count"
+                     @mouseenter="clearTimeout(timeout); showLikes = true"
+                     @mouseleave="timeout = setTimeout(() => showLikes = false, 200)">
+                    <div class="flex items-center">
+                        <button onclick="toggleLike({{ $post->id }})" class="flex items-center text-xs sm:text-sm text-gray-500 hover:text-red-500 transition-colors mr-1 focus:outline-none">
+                            <svg class="w-4 h-4 {{ auth()->check() && $post->isLikedBy(auth()->user()) ? 'text-red-500 fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            </svg>
+                        </button>
+                        <button @click="showLikes = !showLikes" class="text-xs sm:text-sm text-gray-500 hover:text-gray-700 transition-colors focus:outline-none py-1 px-1 rounded-md hover:bg-gray-50">
+                            <span id="like-count-{{ $post->id }}" class="like-count font-medium" x-text="count">{{ $post->likes->count() }}</span>
+                        </button>
+                    </div>
                     
                     @auth
-                    @if($post->likes->count() > 0)
-                        <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover/like:block w-48 bg-gray-900 text-white text-xs rounded-lg py-2 px-3 z-50 shadow-xl">
-                            <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
-                            <div class="relative z-10">
-                                <div class="font-semibold mb-1 border-b border-gray-700 pb-1 text-[10px] uppercase tracking-wider text-gray-400">Liked by</div>
-                                @foreach($post->likes->take(7) as $user)
-                                    <div class="flex items-center gap-2 py-1">
-                                        <div class="h-5 w-5 rounded-full bg-gray-700 flex items-center justify-center text-white text-[9px] font-bold border border-gray-600 overflow-hidden shrink-0">
-                                            @if($user->profile_photo_path)
-                                                <img src="{{ asset('storage/' . $user->profile_photo_path) }}" alt="{{ $user->name }}" class="h-full w-full object-cover">
-                                            @else
-                                                {{ substr($user->name, 0, 1) }}
-                                            @endif
-                                        </div>
-                                        <div class="truncate text-[11px]">{{ $user->name }}</div>
-                                    </div>
-                                @endforeach
-                                @if($post->likes->count() > 7)
-                                    <a href="{{ route('posts.likes', $post) }}" class="block text-center text-gray-400 hover:text-white mt-1 pt-1 border-t border-gray-700 font-bold text-lg leading-none pb-1">...</a>
-                                @endif
-                            </div>
+                        <div x-show="showLikes && count > 0" 
+                             @mouseenter="clearTimeout(timeout); showLikes = true"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 translate-y-1"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100 translate-y-0"
+                             x-transition:leave-end="opacity-0 translate-y-1"
+                             style="display: none;"
+                             class="likes-dropdown-container absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 bg-gray-900 text-white text-xs rounded-lg py-2 px-3 z-50 shadow-xl">
+                            @if($post->likes->count() > 0)
+                                @include('posts.partials.likes-dropdown', ['likes' => $post->likes])
+                            @endif
                         </div>
-                    @endif
                     @endauth
                 </div>
                 <div class="flex items-center text-xs sm:text-sm text-gray-500">

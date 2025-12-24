@@ -117,14 +117,25 @@
             })
             .then(data => {
                 if (data.success) {
+                    // Dispatch event for Alpine updates
+                    window.dispatchEvent(new CustomEvent('likes-updated', {
+                        detail: { id: postId, count: data.count }
+                    }));
+
                     // Update all instances of this post's like button
                     const btns = document.querySelectorAll(`.like-btn-${postId}`);
                     btns.forEach(btn => {
                         const countSpan = btn.querySelector('.like-count');
                         const svg = btn.querySelector('svg');
                         
-                        if (countSpan) countSpan.textContent = data.likes_count;
+                        if (countSpan) countSpan.textContent = data.count;
                         
+                        // Update likes dropdown HTML
+                        const dropdownContainer = btn.querySelector('.likes-dropdown-container');
+                        if (dropdownContainer && data.likes_html !== undefined) {
+                            dropdownContainer.innerHTML = data.likes_html;
+                        }
+
                         if (svg) {
                             if (data.liked) {
                                 svg.classList.add('text-red-500', 'fill-current');
@@ -587,6 +598,27 @@
             </a>
             
             @auth
+                <a href="{{ route('users.show', Auth::user()) }}" class="group flex items-center px-4 py-3 text-base font-medium rounded-xl {{ request()->routeIs('users.show') && request()->route('user') && request()->route('user')->id === Auth::id() ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50' }} transition-all duration-200">
+                    <svg class="mr-4 h-6 w-6 {{ request()->routeIs('users.show') && request()->route('user') && request()->route('user')->id === Auth::id() ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-500' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    My Profile
+                </a>
+
+                <a href="{{ route('notifications.index') }}" class="group flex items-center px-4 py-3 text-base font-medium rounded-xl {{ request()->routeIs('notifications.index') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50' }} transition-all duration-200">
+                    <svg class="mr-4 h-6 w-6 {{ request()->routeIs('notifications.index') ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-500' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    Notifications
+                </a>
+
+                <a href="{{ route('users.following') }}" class="group flex items-center px-4 py-3 text-base font-medium rounded-xl {{ request()->routeIs('users.following') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50' }} transition-all duration-200">
+                    <svg class="mr-4 h-6 w-6 {{ request()->routeIs('users.following') ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-500' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    Following
+                </a>
+
                 <a href="{{ route('posts.favorites') }}" class="group flex items-center px-4 py-3 text-base font-medium rounded-xl {{ request()->routeIs('posts.favorites') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50' }} transition-all duration-200">
                     <svg class="mr-4 h-6 w-6 {{ request()->routeIs('posts.favorites') ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-500' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
